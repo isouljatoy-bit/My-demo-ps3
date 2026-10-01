@@ -1,0 +1,376 @@
+//@version=6
+// ─────────────────────────────────────────────────────────────────────────────
+//  Order Flow AI  —  Heat Map · Volume Profile · Net GEX · Footprint · Delta · Big Trades
+//
+//  Combines the order-flow toolkit (heat map, volume profile, net gamma exposure,
+//  footprint, delta, big trades) into one overlay, then feeds those readings into
+//  a k-Nearest-Neighbours model (Lorentzian distance) that learns, bar by bar,
+//  which order-flow conditions preceded up / down moves on THIS symbol.
+//
+//  Notes
+//  • TradingView has no Level-2 / options feed in Pine, so:
+//      - Heat map  = high-volume liquidity levels from intrabar data, extended until
+//                    price trades back through them (then they "fade").
+//      - Net GEX   = enter Gamma Flip / Call Wall / Put Wall from your GEX provider.
+//      - Footprint = intrabar buy × sell volume and delta printed under each bar.
+//  • Use a symbol with real volume (e.g. ES1!, NQ1!, SPY), not the SPX cash index.
+//  • Signals are computed on closed bars only (no repaint). Not financial advice.
+// ─────────────────────────────────────────────────────────────────────────────
+indicator("Order Flow AI [Heatmap · VP · GEX · Delta · Big Trades]", shorttitle = "OrderFlow AI", overlay = true,
+     max_lines_count = 500, max_boxes_count = 500, max_labels_count = 500, max_bars_back = 1000)
+
+// ── Inputs ───────────────────────────────────────────────────────────────────
+gCore = "Core"
+len    = input.int(50, "Baseline length", minval = 10, group = gCore)
+atrLen = input.int(14, "ATR length", minval = 1, group = gCore)
+
+gDelta  = "Delta / CVD / Footprint"
+autoLtf = input.bool(true, "Auto intrabar timeframe", group = gDelta)
+ltfIn   = input.timeframe("1", "Intrabar timeframe (when auto is off)", group = gDelta)
+cvdLen  = input.int(20, "CVD slope length", minval = 2, group = gDelta)
+showFP  = input.bool(false, "Show footprint (buy × sell, Δ) on recent bars", group = gDelta)
+fpBars  = input.int(15, "Footprint bars", minval = 1, maxval = 100, group = gDelta)
+
+gBig        = "Big Trades"
+bigZ        = input.float(2.0, "Big trade volume z-score", minval = 0.5, step = 0.1, group = gBig)
+showBubbles = input.bool(true, "Show big-trade bubbles", group = gBig)
+
+gHeat     = "Liquidity Heat Map"
+showHeat  = input.bool(true, "Show liquidity levels", group = gHeat)
+heatZ     = input.float(1.5, "Level volume z-score", minval = 0.5, step = 0.1, group = gHeat)
+maxLevels = input.int(40, "Max active levels", minval = 5, maxval = 150, group = gHeat)
+
+gVP      = "Volume Profile"
+showVP   = input.bool(true, "Show volume profile", group = gVP)
+vpLen    = input.int(200, "Lookback bars", minval = 20, maxval = 1000, group = gVP)
+vpRows   = input.int(40, "Rows", minval = 10, maxval = 100, group = gVP)
+vpWidth  = input.int(40, "Width (bars)", minval = 5, maxval = 200, group = gVP)
+vpOffset = input.int(8, "Offset from last bar", minval = 0, maxval = 100, group = gVP)
+vaPct    = input.float(70.0, "Value area %", minval = 10, maxval = 99, group = gVP)
+
+gGex      = "Net Gamma Exposure (enter from your GEX provider, 0 = off)"
+gammaFlip = input.float(0.0, "Gamma flip / zero-gamma level", group = gGex)
+callWall  = input.float(0.0, "Call wall (call resistance)", group = gGex)
+putWall   = input.float(0.0, "Put wall (put support)", group = gGex)
+
+gAI         = "AI Model (kNN, Lorentzian distance)"
+useAI       = input.bool(true, "Enable AI model", group = gAI)
+k           = input.int(8, "Neighbours (k)", minval = 1, maxval = 50, group = gAI)
+horizon     = input.int(5, "Prediction horizon (bars)", minval = 1, maxval = 100, group = gAI)
+step        = input.int(4, "Sample every N bars", minval = 1, maxval = 20, group = gAI)
+maxTrain    = input.int(400, "Max training samples", minval = 50, maxval = 1500, group = gAI)
+predictBars = input.int(1500, "Run model on last N bars", minval = 100, maxval = 5000, group = gAI)
+aiWeight    = input.float(0.6, "AI weight vs rules", minval = 0, maxval = 1, step = 0.05, group = gAI)
+thr         = input.float(0.35, "Signal threshold", minval = 0.05, maxval = 0.95, step = 0.05, group = gAI)
+cooldown    = input.int(5, "Bars between signals", minval = 0, group = gAI)
+showBg      = input.bool(true, "Tint background by AI score", group = gAI)
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+clamp(float x) => math.max(-1.0, math.min(1.0, nz(x)))
+
+GREEN = #00e676
+RED   = #ff1744
+
+// ── Intrabar data → delta, footprint, liquidity price ───────────────────────
+int    chartSec = timeframe.in_seconds()
+string autoTf   = chartSec <= 60 ? timeframe.period : chartSec <= 900 ? "1" : chartSec <= 3600 ? "5" : chartSec <= 14400 ? "15" : chartSec <= 86400 ? "60" : "240"
+string ltfPick  = autoLtf ? autoTf : ltfIn
+string ltf      = timeframe.in_seconds(ltfPick) > chartSec ? timeframe.period : ltfPick
+
+[oArr, cArr, vArr] = request.security_lower_tf(syminfo.tickerid, ltf, [open, close, volume])
+
+float buyVol   = 0.0
+float sellVol  = 0.0
+float levelPx  = hlc3
+int   nSub     = array.size(cArr)
+if nSub > 1
+    float maxSubV = -1.0
+    for i = 0 to nSub - 1
+        float o = oArr.get(i)
+        float c = cArr.get(i)
+        float v = vArr.get(i)
+        if c > o
+            buyVol += v
+        else if c < o
+            sellVol += v
+        else
+            buyVol  += v * 0.5
+            sellVol += v * 0.5
+        if v > maxSubV
+            maxSubV := v
+            levelPx := c
+else
+    // Fallback: split bar volume by where the close sits in the range
+    float rng = high - low
+    float bp  = rng > 0 ? (close - low) / rng : 0.5
+    buyVol  := volume * bp
+    sellVol := volume * (1 - bp)
+
+float delta      = buyVol - sellVol
+float vol        = math.max(nz(volume), 1e-10)
+float deltaRatio = delta / vol                        // -1 … +1
+float buyFrac    = buyVol / vol
+
+var float cvd = 0.0
+cvd += delta
+
+float avgVol   = math.max(nz(ta.sma(volume, len)), 1e-10)
+float sdVol    = nz(ta.stdev(volume, len))
+float volZ     = sdVol > 0 ? (volume - avgVol) / sdVol : 0.0
+float atr      = math.max(nz(ta.atr(atrLen)), syminfo.mintick)
+float cvdSlope = (cvd - nz(cvd[cvdLen])) / (avgVol * cvdLen)
+
+// ── Big trades ──────────────────────────────────────────────────────────────
+bool  isBig     = volZ >= bigZ
+float bigSigned = isBig ? volume * math.sign(delta) : 0.0
+float bigImb    = math.sum(bigSigned, 10) / (avgVol * 3)
+int   bigTier   = isBig ? (volZ >= bigZ + 2 ? 3 : volZ >= bigZ + 1 ? 2 : 1) : 0
+color bubCol    = delta >= 0 ? color.new(GREEN, 25) : color.new(RED, 25)
+
+plotshape(showBubbles and bigTier == 1 ? levelPx : na, "Big trade (S)", shape.circle, location.absolute, bubCol, size = size.tiny)
+plotshape(showBubbles and bigTier == 2 ? levelPx : na, "Big trade (M)", shape.circle, location.absolute, bubCol, size = size.small)
+plotshape(showBubbles and bigTier == 3 ? levelPx : na, "Big trade (L)", shape.circle, location.absolute, bubCol, size = size.normal)
+
+// ── Absorption (heavy volume, little progress — passive liquidity holding) ──
+bool  isAbsorb  = volZ >= 1.5 and (high - low) < 0.6 * atr
+float absorb    = isAbsorb ? (delta < 0 and close >= hl2 ? 1.0 : delta > 0 and close <= hl2 ? -1.0 : 0.0) : 0.0
+float absorbSum = math.sum(absorb, 5)
+
+// ── Value: rolling VWAP distance ────────────────────────────────────────────
+float rvwap    = math.sum(hlc3 * nz(volume), len) / math.max(math.sum(nz(volume), len), 1e-10)
+float vwapDist = (close - rvwap) / atr
+
+// ── Net gamma exposure context ──────────────────────────────────────────────
+bool  gexOn    = gammaFlip > 0
+bool  posGamma = gexOn and close > gammaFlip   // dealers long gamma → mean reversion
+bool  negGamma = gexOn and close < gammaFlip   // dealers short gamma → trend / volatility
+float gexDist  = gexOn ? (close - gammaFlip) / atr : 0.0
+
+float sWallPut  = putWall  > 0 ? math.max(0.0, 1 - math.abs(close - putWall)  / atr) : 0.0
+float sWallCall = callWall > 0 ? math.max(0.0, 1 - math.abs(close - callWall) / atr) : 0.0
+
+plot(gexOn ? gammaFlip : na, "Gamma flip", color.new(#ffd600, 0), 2, plot.style_linebr)
+plot(callWall > 0 ? callWall : na, "Call wall", color.new(RED, 0), 2, plot.style_linebr)
+plot(putWall > 0 ? putWall : na, "Put wall", color.new(GREEN, 0), 2, plot.style_linebr)
+
+// ── Rule-based confluence score ─────────────────────────────────────────────
+float sDelta = clamp(ta.ema(deltaRatio, 3) * 2)
+float sCvd   = clamp(cvdSlope * 3)
+float sBig   = clamp(bigImb)
+float sAbs   = clamp(absorbSum / 2)
+float sValue = posGamma ? clamp(-vwapDist / 2) : negGamma ? clamp(vwapDist / 2) : clamp(-vwapDist / 3)
+float sWall  = clamp(sWallPut - sWallCall)
+float rule   = (1.5 * sDelta + 1.5 * sCvd + 1.2 * sBig + 1.0 * sAbs + 0.8 * sValue + 1.0 * sWall) / 7.0
+
+// ── AI model: kNN over order-flow features ──────────────────────────────────
+const int NF = 6
+float f1 = clamp(deltaRatio)
+float f2 = clamp(cvdSlope * 3)
+float f3 = clamp(vwapDist / 3)
+float f4 = clamp(bigImb)
+float f5 = clamp(absorbSum / 2)
+float f6 = clamp(gexDist / 3)
+
+// Features as they were `horizon` bars ago, labelled with what happened since
+float f1h = f1[horizon]
+float f2h = f2[horizon]
+float f3h = f3[horizon]
+float f4h = f4[horizon]
+float f5h = f5[horizon]
+float f6h = f6[horizon]
+float ret = close - nz(close[horizon], close)
+float atrH = nz(atr[horizon], atr)
+
+var array<float> trainX = array.new<float>()
+var array<float> trainY = array.new<float>()
+
+if useAI and bar_index > horizon + len and bar_index % step == 0
+    trainX.push(f1h)
+    trainX.push(f2h)
+    trainX.push(f3h)
+    trainX.push(f4h)
+    trainX.push(f5h)
+    trainX.push(f6h)
+    trainY.push(math.abs(ret) < 0.1 * atrH ? 0.0 : math.sign(ret))
+    if trainY.size() > maxTrain
+        trainY.shift()
+        for j = 1 to NF
+            trainX.shift()
+
+float knnRaw = 0.0
+int   nTrain = trainY.size()
+bool  aiLive = useAI and nTrain > k and bar_index >= last_bar_index - predictBars
+if aiLive
+    array<float> dists = array.new<float>(nTrain, 0.0)
+    for i = 0 to nTrain - 1
+        int b = i * NF
+        float d = math.log(1 + math.abs(f1 - trainX.get(b)))
+             + math.log(1 + math.abs(f2 - trainX.get(b + 1)))
+             + math.log(1 + math.abs(f3 - trainX.get(b + 2)))
+             + math.log(1 + math.abs(f4 - trainX.get(b + 3)))
+             + math.log(1 + math.abs(f5 - trainX.get(b + 4)))
+             + math.log(1 + math.abs(f6 - trainX.get(b + 5)))
+        dists.set(i, d)
+    array<int> nn = dists.sort_indices(order.ascending)
+    float vote = 0.0
+    for j = 0 to k - 1
+        vote += trainY.get(nn.get(j))
+    knnRaw := vote / k
+
+float knn = ta.ema(knnRaw, 3)
+float ai  = aiLive ? aiWeight * knn + (1 - aiWeight) * rule : rule
+
+// ── Signals (closed bars only) ──────────────────────────────────────────────
+var int lastSigBar = -100000
+bool crossUp  = ta.crossover(ai, thr)
+bool crossDn  = ta.crossunder(ai, -thr)
+bool coolOk   = bar_index - lastSigBar > cooldown
+bool longSig  = barstate.isconfirmed and coolOk and crossUp and delta > 0
+bool shortSig = barstate.isconfirmed and coolOk and crossDn and delta < 0
+if longSig or shortSig
+    lastSigBar := bar_index
+
+plotshape(longSig,  "AI Long",  shape.labelup,   location.belowbar, color.new(GREEN, 0), text = "AI BUY",  textcolor = color.black, size = size.small)
+plotshape(shortSig, "AI Short", shape.labeldown, location.abovebar, color.new(RED, 0),   text = "AI SELL", textcolor = color.white, size = size.small)
+bgcolor(showBg ? color.new(ai >= 0 ? GREEN : RED, 100 - int(math.round(math.abs(ai) * 18))) : na, title = "AI tint")
+
+alertcondition(longSig,  "Order Flow AI — Long",  "Order Flow AI BUY on {{ticker}} @ {{close}}")
+alertcondition(shortSig, "Order Flow AI — Short", "Order Flow AI SELL on {{ticker}} @ {{close}}")
+
+// ── Liquidity heat map ──────────────────────────────────────────────────────
+heatColor(float z) =>
+    z < heatZ + 1 ? color.from_gradient(z, heatZ, heatZ + 1, color.new(#2962ff, 40), color.new(#00bcd4, 20)) :
+     z < heatZ + 2.5 ? color.from_gradient(z, heatZ + 1, heatZ + 2.5, color.new(#ffeb3b, 15), color.new(#ff9800, 0)) :
+     color.new(#ff3d00, 0)
+
+var array<line>  heatLines = array.new<line>()
+var array<float> heatPx    = array.new<float>()
+
+if showHeat
+    // Levels that price trades back through are consumed and fade out
+    int nh = heatLines.size()
+    if nh > 0
+        for i = nh - 1 to 0
+            line  l = heatLines.get(i)
+            float p = heatPx.get(i)
+            if l.get_x1() < bar_index and low <= p and high >= p
+                l.set_extend(extend.none)
+                l.set_x2(bar_index)
+                l.set_color(color.new(color.gray, 75))
+                l.set_width(1)
+                heatLines.remove(i)
+                heatPx.remove(i)
+    if volZ >= heatZ
+        line nl = line.new(bar_index, levelPx, bar_index + 1, levelPx, extend = extend.right,
+             color = heatColor(volZ), width = volZ >= heatZ + 2 ? 3 : 2)
+        heatLines.push(nl)
+        heatPx.push(levelPx)
+        if heatLines.size() > maxLevels
+            line.delete(heatLines.shift())
+            heatPx.shift()
+
+// ── Footprint (recent bars) ─────────────────────────────────────────────────
+if showFP and bar_index > last_bar_index - fpBars
+    string fpTxt = str.tostring(buyVol, format.volume) + " × " + str.tostring(sellVol, format.volume) +
+         "\nΔ " + str.tostring(delta, format.volume)
+    label.new(bar_index, low, fpTxt, style = label.style_label_up, size = size.tiny,
+         color = color.new(color.black, 100), textcolor = delta >= 0 ? GREEN : RED)
+
+// ── Volume profile (buy/sell coloured, POC + value area) ────────────────────
+float vpHi = ta.highest(high, vpLen)
+float vpLo = ta.lowest(low, vpLen)
+
+var array<box>  vpBoxes = array.new<box>()
+var array<line> vpLines = array.new<line>()
+var float vpPOC = na
+var float vpVAH = na
+var float vpVAL = na
+
+if showVP and barstate.islast
+    for bx in vpBoxes
+        bx.delete()
+    vpBoxes.clear()
+    for ln in vpLines
+        ln.delete()
+    vpLines.clear()
+
+    float rowH = (vpHi - vpLo) / vpRows
+    if rowH > 0
+        array<float> tot = array.new<float>(vpRows, 0.0)
+        array<float> buy = array.new<float>(vpRows, 0.0)
+        int bars = math.min(vpLen, bar_index + 1)
+        for i = 0 to bars - 1
+            float h  = high[i]
+            float lo = low[i]
+            float v  = nz(volume[i])
+            float bf = nz(buyFrac[i], 0.5)
+            int r0 = math.max(0, math.min(vpRows - 1, math.floor((lo - vpLo) / rowH)))
+            int r1 = math.max(0, math.min(vpRows - 1, math.floor((h - vpLo) / rowH)))
+            float share = v / (r1 - r0 + 1)
+            for r = r0 to r1
+                tot.set(r, tot.get(r) + share)
+                buy.set(r, buy.get(r) + share * bf)
+
+        float maxV  = tot.max()
+        int   poc   = tot.indexof(maxV)
+        float total = tot.sum()
+        float acc   = tot.get(poc)
+        int   up    = poc
+        int   dn    = poc
+        while acc < total * vaPct / 100 and (up < vpRows - 1 or dn > 0)
+            float nu = up < vpRows - 1 ? tot.get(up + 1) : -1.0
+            float nd = dn > 0 ? tot.get(dn - 1) : -1.0
+            if nu >= nd
+                up  += 1
+                acc += nu
+            else
+                dn  -= 1
+                acc += nd
+
+        vpPOC := vpLo + (poc + 0.5) * rowH
+        vpVAH := vpLo + (up + 1) * rowH
+        vpVAL := vpLo + dn * rowH
+
+        int x1 = bar_index + vpOffset
+        if maxV > 0
+            for r = 0 to vpRows - 1
+                float v = tot.get(r)
+                if v > 0
+                    int   w    = math.max(1, int(math.round(vpWidth * v / maxV)))
+                    bool  inVA = r >= dn and r <= up
+                    float bs   = buy.get(r) / v
+                    color base = r == poc ? #ffd600 : color.from_gradient(bs, 0.35, 0.65, RED, GREEN)
+                    color c    = color.new(base, r == poc ? 10 : inVA ? 35 : 70)
+                    vpBoxes.push(box.new(x1, vpLo + (r + 1) * rowH, x1 + w, vpLo + r * rowH,
+                         border_color = c, border_width = 0, bgcolor = c))
+
+        int xs = bar_index - bars + 1
+        vpLines.push(line.new(xs, vpPOC, x1 + vpWidth, vpPOC, color = color.new(#ffd600, 0), width = 2))
+        vpLines.push(line.new(xs, vpVAH, x1 + vpWidth, vpVAH, color = color.new(#90a4ae, 30), style = line.style_dashed))
+        vpLines.push(line.new(xs, vpVAL, x1 + vpWidth, vpVAL, color = color.new(#90a4ae, 30), style = line.style_dashed))
+
+// ── Dashboard ───────────────────────────────────────────────────────────────
+var table dash = table.new(position.top_right, 2, 11, bgcolor = color.new(#0b0f19, 10), border_color = color.new(#37474f, 0), border_width = 1)
+
+cell(int row, string k_, string v_, color c_) =>
+    dash.cell(0, row, k_, text_color = color.new(color.white, 20), text_size = size.small, text_halign = text.align_left)
+    dash.cell(1, row, v_, text_color = c_, text_size = size.small, text_halign = text.align_right)
+
+sgnCol(float x) => x > 0.05 ? GREEN : x < -0.05 ? RED : color.gray
+
+if barstate.islast
+    float pct = (ai + 1) * 50
+    string bias = ai >= thr ? "LONG BIAS" : ai <= -thr ? "SHORT BIAS" : "NEUTRAL"
+    string gexTxt = not gexOn ? "not set" : posGamma ? "+γ (mean revert)" : "−γ (trend/vol)"
+    string valTxt = na(vpVAH) ? "—" : close > vpVAH ? "above value" : close < vpVAL ? "below value" : "inside value"
+    cell(0,  "ORDER FLOW AI", bias, sgnCol(ai))
+    cell(1,  "AI score",      str.tostring(pct, "#.0") + " / 100", sgnCol(ai))
+    cell(2,  "kNN vote",      aiLive ? str.tostring(knn, "+#.00;-#.00") + "  (" + str.tostring(nTrain) + " samples)" : "off", sgnCol(knn))
+    cell(3,  "Rules",         str.tostring(rule, "+#.00;-#.00"), sgnCol(rule))
+    cell(4,  "Delta",         str.tostring(delta, format.volume), sgnCol(sDelta))
+    cell(5,  "CVD trend",     str.tostring(sCvd, "+#.00;-#.00"), sgnCol(sCvd))
+    cell(6,  "Big trades",    str.tostring(sBig, "+#.00;-#.00"), sgnCol(sBig))
+    cell(7,  "Absorption",    str.tostring(sAbs, "+#.00;-#.00"), sgnCol(sAbs))
+    cell(8,  "Net GEX",       gexTxt, gexOn ? (posGamma ? GREEN : RED) : color.gray)
+    cell(9,  "Vol profile",   valTxt, color.white)
+    cell(10, "Intrabar TF",   ltf + (nSub > 1 ? "" : " (approx)"), color.gray)
