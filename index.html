@@ -317,7 +317,8 @@ const _v1 = V3(), _v2 = V3(), _v3 = V3(), _v4 = V3();
 
 const isTouch = matchMedia('(pointer: coarse)').matches;
 const params = new URLSearchParams(location.search);
-let QUALITY = params.get('q') || localStorage.getItem('gfc_q') || (isTouch ? 'low' : 'high');
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+let QUALITY = params.get('q') || store.get('gfc_q') || (isTouch ? 'low' : 'high');
 const HIGH = QUALITY === 'high';
 
 // ---------- renderer / scene ----------
@@ -2053,7 +2054,7 @@ function updateUse(f, dt) {
 let player;
 let camYaw = 0, camPitch = -.15, camDist = 3.6, camKick = 0, shake = 0, hurtFlash = 0, shoulder = 1;
 const camPos = V3(), camLook = V3();
-let sens = parseFloat(localStorage.getItem('gfc_sens') || '1');
+let sens = parseFloat(store.get('gfc_sens') || '1');
 const keys = {};
 let mouseDown = false, rmb = false, buildMode = false, buildPiece = 'wall';
 let scoped = 0, aimHold = 0, gameState = 'loading', simTime = 0, spectating = false, spectateTarget = null, pausedMenu = false, uiOpen = null;
@@ -2084,7 +2085,7 @@ document.addEventListener('pointerlockchange', () => {
   if (!locked && gameState === 'playing' && !uiOpen && !isTouch) { pausedMenu = true; $('pause').classList.remove('hidden'); }
 });
 $('resumeBtn').onclick = () => { pausedMenu = false; $('pause').classList.add('hidden'); lockPointer(); };
-$('sens').value = sens; $('sens').oninput = e => { sens = parseFloat(e.target.value); localStorage.setItem('gfc_sens', sens); };
+$('sens').value = sens; $('sens').oninput = e => { sens = parseFloat(e.target.value); store.set('gfc_sens', sens); };
 $('againBtn').onclick = () => location.reload();
 renderer.domElement.addEventListener('click', () => { if ((gameState === 'playing' || gameState === 'dead') && !uiOpen && !pausedMenu && document.pointerLockElement !== renderer.domElement) lockPointer(); });
 document.addEventListener('mousemove', e => {
@@ -2604,7 +2605,7 @@ async function boot() {
 }
 document.querySelectorAll('#qualitySel button').forEach(b => {
   b.classList.toggle('on', b.dataset.q === QUALITY);
-  b.onclick = () => { if (b.dataset.q !== QUALITY) { localStorage.setItem('gfc_q', b.dataset.q); location.search = '?q=' + b.dataset.q; } };
+  b.onclick = () => { if (b.dataset.q !== QUALITY) { store.set('gfc_q', b.dataset.q); try { location.search = '?q=' + b.dataset.q; } catch (e) { location.reload(); } } };
 });
 $('playBtn').onclick = startGame;
 window.GFC = { hurt: (n, by = 1) => applyDamage(player, n, fighters[by], true), cam: (dt = .1) => { for (let i = 0; i < 10; i++) updateCamera(dt); camera.updateMatrixWorld(); updateLock(); }, fire:() => primaryAction(true), get lock() { return lockTarget && lockTarget.name; }, setBuild: (on, piece) => { buildMode = on; buildPiece = piece; }, setAim: v => { rmb = v; }, sim: (sec, dt = 1 / 30) => { for (let t = 0; t < sec; t += dt) simulate(dt); }, get alive() { return alive; }, get player() { return player; }, fighters, storm, pickups, builds, startGame, camera, scene, setCam: (y, p) => { camYaw = y; camPitch = p; }, get state() { return gameState; } };
