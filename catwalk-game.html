@@ -5,34 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Glam Runway</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --pink: #ff4fa3;
-    --pink-dark: #e0287f;
-    --pink-soft: #ffe1f0;
-    --purple: #a46bff;
-    --ink: #4a2348;
-    --card: #ffffff;
-    --bg: #fff5fb;
+    --pink: #e8417f;
+    --pink-dark: #c2185b;
+    --ink: #24161f;
+    --muted: #8a7584;
+    --line: #eadde4;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
   body {
     font-family: 'Poppins', 'Segoe UI', sans-serif;
-    background: var(--bg);
+    background: #0a090d;
     color: var(--ink);
     overflow: hidden;
   }
   .app { display: flex; height: 100vh; }
 
-  /* ---------------- SIDEBAR / DRESSING ROOM ---------------- */
+  /* ================= DRESSING ROOM ================= */
   .sidebar {
-    width: 340px;
+    width: 330px;
     flex-shrink: 0;
-    background: linear-gradient(180deg, #fff 0%, #ffeef7 100%);
-    border-right: 4px solid #ffc2e0;
-    padding: 18px 16px 20px;
+    background: linear-gradient(180deg, #fffafc 0%, #fbeff4 100%);
+    border-right: 1px solid #3a2a33;
+    padding: 20px 16px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -40,31 +38,34 @@
     z-index: 5;
   }
   .sidebar h1 {
-    font-family: 'Pacifico', cursive;
-    font-weight: 400;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 500;
     font-size: 30px;
-    color: var(--pink);
+    color: var(--ink);
     text-align: center;
-    text-shadow: 2px 2px 0 #ffd3ea;
-    line-height: 1.2;
+    letter-spacing: .5px;
   }
   .sidebar .subtitle {
     text-align: center;
-    font-size: 13px;
-    color: #a0628f;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
     margin-top: -8px;
   }
+  #categories { display: flex; flex-direction: column; gap: 12px; }
   .category {
-    background: var(--card);
-    border-radius: 18px;
+    background: #fff;
+    border-radius: 14px;
     padding: 12px;
-    box-shadow: 0 4px 14px rgba(255, 79, 163, 0.12);
-    border: 2px solid #ffe0ef;
+    border: 1px solid var(--line);
+    box-shadow: 0 2px 10px rgba(80, 20, 50, .06);
   }
   .category h3 {
-    font-size: 14px;
-    font-weight: 800;
-    letter-spacing: .5px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--pink-dark);
     margin-bottom: 8px;
@@ -75,226 +76,230 @@
     align-items: center;
     gap: 10px;
     padding: 8px 10px;
-    border: 2px solid #ffd6ea;
-    border-radius: 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
     background: #fff;
     font-family: inherit;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--ink);
     cursor: pointer;
     transition: transform .12s, background .15s, border-color .15s, box-shadow .15s;
     text-align: left;
   }
-  .opt-btn:hover:not(:disabled) { transform: translateX(3px); background: #fff4fa; border-color: #ffa8d2; }
-  .opt-btn.active {
-    background: linear-gradient(90deg, #ff7cbc, #ff4fa3);
-    border-color: var(--pink-dark);
+  .opt-btn:hover:not(:disabled) { transform: translateX(3px); background: #fff5f9; border-color: #f2b6cd; }
+  .opt-btn.active, .opt-btn.active:hover:not(:disabled) {
+    background: #24161f;
+    border-color: #24161f;
     color: #fff;
-    box-shadow: 0 4px 12px rgba(255, 79, 163, .35);
+    box-shadow: 0 4px 12px rgba(36, 22, 31, .3);
   }
-  .opt-btn.active:hover:not(:disabled) { background: linear-gradient(90deg, #ff7cbc, #ff4fa3); border-color: var(--pink-dark); }
-  .opt-btn:disabled { opacity: .55; cursor: not-allowed; }
+  .opt-btn:disabled { opacity: .5; cursor: not-allowed; }
   .swatch {
-    width: 22px; height: 22px; border-radius: 50%;
-    border: 2px solid rgba(255,255,255,.9);
-    box-shadow: 0 0 0 1px rgba(0,0,0,.12);
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.15), inset 0 -3px 6px rgba(0,0,0,.2);
     flex-shrink: 0;
   }
-  .action-row { display: flex; gap: 8px; }
   .btn {
     font-family: inherit;
-    font-weight: 800;
+    font-weight: 600;
     border: none;
     cursor: pointer;
     border-radius: 999px;
     transition: transform .12s, box-shadow .15s, opacity .15s;
   }
-  .btn:hover:not(:disabled) { transform: translateY(-2px) scale(1.02); }
-  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn:hover:not(:disabled) { transform: translateY(-2px); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
   .btn-random {
-    flex: 1;
     padding: 10px;
     font-size: 14px;
     background: #fff;
-    color: var(--purple);
-    border: 2px solid #dcc7ff;
+    color: var(--ink);
+    border: 1px solid var(--line);
   }
   .btn-start {
     width: 100%;
     padding: 16px;
-    font-size: 18px;
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
     color: #fff;
-    background: linear-gradient(90deg, #ff4fa3, #a46bff);
-    box-shadow: 0 6px 18px rgba(164, 107, 255, .4);
-    letter-spacing: .5px;
-    animation: btnGlow 2s ease-in-out infinite;
-  }
-  .btn-start:disabled { animation: none; }
-  @keyframes btnGlow {
-    0%,100% { box-shadow: 0 6px 18px rgba(164,107,255,.4); }
-    50% { box-shadow: 0 6px 26px rgba(255,79,163,.7); }
+    background: linear-gradient(90deg, #c2185b, #e8417f);
+    box-shadow: 0 8px 22px rgba(194, 24, 91, .35);
   }
 
-  /* ---------------- STAGE ---------------- */
+  /* ================= STAGE ================= */
   .stage {
     position: relative;
     flex: 1;
     overflow: hidden;
-    background: radial-gradient(ellipse at 50% 20%, #6b2b8f 0%, #3a1356 55%, #220a35 100%);
+    background: #060509;
   }
   .backwall {
     position: absolute;
     left: 0; right: 0; top: 0;
-    height: 34%;
+    height: 36%;
     background:
-      repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 22px, rgba(0,0,0,.08) 22px 44px),
-      linear-gradient(180deg, #ff6fb7 0%, #d63f8e 100%);
-    border-bottom: 6px solid #ffd1ea;
-    box-shadow: inset 0 -30px 50px rgba(0,0,0,.25);
+      radial-gradient(ellipse 40% 70% at 50% 85%, rgba(255, 235, 245, .22), transparent 70%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 1px, transparent 1px 64px),
+      linear-gradient(180deg, #121017 0%, #1c1820 100%);
   }
-  .bulb-row {
-    position: absolute; left: 0; right: 0; top: 10px;
-    display: flex; justify-content: space-around;
+  .portal {
+    position: absolute;
+    left: 50%; bottom: 0;
+    width: 17%;
+    height: 66%;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, #2b2530 0%, #fff4f9 140%);
+    border: 2px solid rgba(255,255,255,.85);
+    border-bottom: none;
+    box-shadow: 0 0 24px rgba(255, 220, 238, .55), inset 0 0 40px rgba(255, 220, 238, .35);
   }
-  .bulb-row span {
-    width: 10px; height: 10px; border-radius: 50%;
-    background: #fff6c2;
-    box-shadow: 0 0 10px 3px #ffe97a;
-    animation: twinkle 1.4s ease-in-out infinite;
-  }
-  .bulb-row span:nth-child(even) { animation-delay: .7s; }
-  @keyframes twinkle { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
-  .sign {
+  .brand {
     position: absolute;
     top: 13%;
     left: 50%;
     transform: translateX(-50%);
-    font-family: 'Pacifico', cursive;
-    font-size: clamp(26px, 4vw, 52px);
+    text-align: center;
     color: #fff;
-    text-shadow: 0 0 8px #fff, 0 0 18px #ff9ad0, 0 0 34px #ff4fa3;
     white-space: nowrap;
-    animation: neon 3s ease-in-out infinite;
   }
-  @keyframes neon { 0%,100% { opacity: 1; } 47% { opacity: 1; } 49% { opacity: .6; } 51% { opacity: 1; } }
-
-  .spot {
-    position: absolute;
-    top: -10%;
-    width: 38%;
-    height: 120%;
-    background: linear-gradient(180deg, rgba(255,255,230,.35), rgba(255,255,230,0) 85%);
-    clip-path: polygon(45% 0, 55% 0, 100% 100%, 0 100%);
-    mix-blend-mode: screen;
-    pointer-events: none;
-    z-index: 3;
-    transform-origin: 50% 0;
+  .brand .name {
+    font-family: 'Playfair Display', serif;
+    font-weight: 500;
+    font-size: clamp(22px, 3.2vw, 44px);
+    letter-spacing: .45em;
+    padding-left: .45em;
+    text-shadow: 0 0 18px rgba(255, 200, 225, .55);
   }
-  .spot-l { left: 6%; animation: sweepL 6s ease-in-out infinite; }
-  .spot-r { right: 6%; animation: sweepR 6s ease-in-out infinite; }
-  @keyframes sweepL { 0%,100% { transform: rotate(-18deg); } 50% { transform: rotate(-4deg); } }
-  @keyframes sweepR { 0%,100% { transform: rotate(18deg); } 50% { transform: rotate(4deg); } }
-
-  .runway {
+  .brand .season {
+    margin-top: 4px;
+    font-size: clamp(9px, .9vw, 12px);
+    letter-spacing: .6em;
+    color: rgba(255,255,255,.55);
+  }
+  .floor-dark {
     position: absolute;
     left: 0; right: 0; bottom: 0;
-    height: 66%;
-    clip-path: polygon(40% 0, 60% 0, 92% 100%, 8% 100%);
-    background:
-      radial-gradient(circle, rgba(255,255,255,.95) 0 1px, transparent 1.6px) 0 0 / 17px 17px,
-      radial-gradient(circle, rgba(255,240,170,.9) 0 1px, transparent 1.6px) 8px 6px / 23px 23px,
-      radial-gradient(circle, rgba(255,200,240,.9) 0 1.2px, transparent 1.8px) 4px 12px / 31px 31px,
-      linear-gradient(180deg, #ffb3d9 0%, #ff7cbc 50%, #ff4fa3 100%);
-    animation: glitter 1.6s linear infinite;
-    z-index: 1;
-  }
-  .runway::after {
-    content: "";
-    position: absolute; inset: 0;
-    background: linear-gradient(90deg, transparent 0 49.4%, rgba(255,255,255,.55) 49.4% 50.6%, transparent 50.6%);
-  }
-  @keyframes glitter {
-    0% { background-position: 0 0, 8px 6px, 4px 12px, 0 0; filter: brightness(1); }
-    50% { filter: brightness(1.12); }
-    100% { background-position: 0 17px, 8px 29px, 4px 43px, 0 0; filter: brightness(1); }
+    height: 64%;
+    background: linear-gradient(180deg, #0e0c12 0%, #050407 100%);
   }
   .runway-edge {
     position: absolute;
     left: 0; right: 0; bottom: 0;
-    height: 66%;
-    z-index: 0;
-    clip-path: polygon(39.3% 0, 60.7% 0, 93.5% 100%, 6.5% 100%);
-    background: linear-gradient(180deg, #fff 0%, #ffe3f2 100%);
-    filter: drop-shadow(0 0 12px #fff);
+    height: 64%;
+    clip-path: polygon(41.4% 0, 58.6% 0, 93.8% 100%, 6.2% 100%);
+    background: linear-gradient(180deg, rgba(255,255,255,.55), #fff);
+    z-index: 1;
   }
+  .runway {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 64%;
+    clip-path: polygon(41.7% 0, 58.3% 0, 93.2% 100%, 6.8% 100%);
+    background:
+      radial-gradient(ellipse 22% 30% at 50% 80%, rgba(255,255,255,.55), transparent 70%),
+      linear-gradient(90deg, transparent 47%, rgba(255,255,255,.35) 50%, transparent 53%),
+      linear-gradient(180deg, #3a3540 0%, #8d8794 30%, #d8d3dc 70%, #f3f0f5 100%);
+    z-index: 1;
+  }
+  .runway::before {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(circle, rgba(255,255,255,.95) 0 .6px, transparent 1.2px) 0 0 / 23px 19px,
+      radial-gradient(circle, rgba(255,215,235,.9) 0 .6px, transparent 1.2px) 11px 7px / 31px 27px;
+    opacity: .55;
+    animation: shimmer 2.4s ease-in-out infinite alternate;
+  }
+  @keyframes shimmer { from { opacity: .25; } to { opacity: .7; } }
 
-  .crowd {
+  .beam {
     position: absolute;
-    bottom: 0;
-    width: 22%;
-    height: 32%;
-    z-index: 2;
+    top: -5%;
+    width: 30%;
+    height: 110%;
+    background: linear-gradient(180deg, rgba(255,250,245,.22), rgba(255,250,245,.04) 70%, transparent);
+    clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%);
+    mix-blend-mode: screen;
     pointer-events: none;
+    z-index: 3;
+    transform-origin: 50% 0;
+    filter: blur(6px);
   }
-  .crowd-l { left: 0; }
-  .crowd-r { right: 0; }
-  .fan {
+  .beam-c { left: 35%; width: 30%; opacity: .9; }
+  .beam-l { left: 2%; animation: sweepL 9s ease-in-out infinite; opacity: .6; }
+  .beam-r { right: 2%; animation: sweepR 9s ease-in-out infinite; opacity: .6; }
+  @keyframes sweepL { 0%,100% { transform: rotate(-22deg); } 50% { transform: rotate(-10deg); } }
+  @keyframes sweepR { 0%,100% { transform: rotate(22deg); } 50% { transform: rotate(10deg); } }
+  .haze {
+    position: absolute; inset: -10%;
+    background:
+      radial-gradient(ellipse 40% 25% at 30% 40%, rgba(255,255,255,.05), transparent 70%),
+      radial-gradient(ellipse 35% 20% at 70% 55%, rgba(255,230,240,.05), transparent 70%);
+    animation: drift 18s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: 3;
+  }
+  @keyframes drift { from { transform: translateX(-4%); } to { transform: translateX(4%); } }
+
+  .crowd { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+  .person {
     position: absolute;
-    bottom: 0;
-    width: 46px;
+    transform: translate(-50%, -100%);
   }
-  .fan .head {
-    width: 30px; height: 30px; border-radius: 50%;
+  .person .h {
+    border-radius: 50% 50% 46% 46%;
     margin: 0 auto;
     background: var(--c);
   }
-  .fan .body {
-    width: 46px; height: 40px;
-    border-radius: 22px 22px 0 0;
-    margin-top: 2px;
+  .person .b {
+    border-radius: 45% 45% 0 0;
+    margin-top: 6%;
     background: var(--c);
   }
-  .fan .cam {
+  .person .phone {
     position: absolute;
-    top: 20px; left: 50%;
-    width: 22px; height: 14px;
-    margin-left: -11px;
-    background: #222;
-    border-radius: 3px;
-    border: 2px solid #555;
-  }
-  .fan .cam::after {
-    content: ""; position: absolute;
-    width: 7px; height: 7px; border-radius: 50%;
-    background: #6af; left: 6px; top: 2px;
+    border-radius: 2px;
+    background: linear-gradient(160deg, #e9f3ff, #9cc4ff);
+    box-shadow: 0 0 10px 2px rgba(170, 205, 255, .6);
   }
 
   .flash-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
-  .flash-layer.front { z-index: 6; }
+  .flash-layer.front { z-index: 7; }
   .flash {
     position: absolute;
     width: var(--s, 40px);
     height: var(--s, 40px);
-    border-radius: 50%;
-    background: radial-gradient(circle, #fff 0 32%, rgba(255,255,255,.75) 48%, rgba(255,255,255,0) 72%);
-    box-shadow: 0 0 30px 10px rgba(255,255,255,.75);
-    transform: translate(-50%, -50%) scale(.2);
-    animation: pop .6s ease-out forwards;
+    transform: translate(-50%, -50%);
+    animation: pop .45s ease-out forwards;
   }
-  .flash::before, .flash::after {
-    content: "";
+  .flash .core {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0 18%, rgba(255,255,255,.85) 30%, rgba(225,235,255,.35) 50%, rgba(255,255,255,0) 70%);
+  }
+  .flash .streak {
     position: absolute;
     left: 50%; top: 50%;
-    width: 220%; height: 3px;
-    background: linear-gradient(90deg, transparent, #fff, transparent);
+    width: 900%;
+    height: 2px;
     transform: translate(-50%, -50%);
+    background: linear-gradient(90deg, transparent, rgba(160, 200, 255, .5) 35%, #fff 50%, rgba(160, 200, 255, .5) 65%, transparent);
+    filter: blur(.4px);
   }
-  .flash::after { transform: translate(-50%, -50%) rotate(90deg); }
+  .flash .ghost {
+    position: absolute;
+    width: 40%; height: 40%;
+    border-radius: 50%;
+    border: 1px solid rgba(200, 220, 255, .35);
+    left: 160%; top: 120%;
+  }
   @keyframes pop {
-    0% { transform: translate(-50%, -50%) scale(.2); opacity: 1; }
-    30% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(.4); }
+    15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.15); }
   }
   .white-out {
     position: absolute; inset: 0;
@@ -303,94 +308,125 @@
     pointer-events: none;
     z-index: 9;
   }
-  .white-out.go { animation: whiteout .35s ease-out; }
-  @keyframes whiteout { 0% { opacity: .75; } 100% { opacity: 0; } }
+  .white-out.go { animation: whiteout .3s ease-out; }
+  @keyframes whiteout { 0% { opacity: .55; } 100% { opacity: 0; } }
 
-  /* ---------------- MODEL ---------------- */
+  .vignette {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    z-index: 8;
+    background: radial-gradient(ellipse 75% 70% at 50% 55%, transparent 55%, rgba(0,0,0,.6) 100%);
+  }
+  .grain {
+    position: absolute; inset: -50%;
+    pointer-events: none;
+    z-index: 8;
+    opacity: .09;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+    animation: grain .6s steps(4) infinite;
+  }
+  @keyframes grain {
+    0% { transform: translate(0, 0); } 25% { transform: translate(-3%, 2%); }
+    50% { transform: translate(2%, -3%); } 75% { transform: translate(-2%, -1%); } 100% { transform: translate(0, 0); }
+  }
+
+  /* ================= MODEL ================= */
   .model-wrap {
     position: absolute;
     left: 50%;
-    bottom: 3%;
-    height: 74%;
+    bottom: 2.5%;
+    height: 80%;
     aspect-ratio: 200 / 360;
     transform: translateX(-50%);
     transform-origin: 50% 100%;
     z-index: 4;
   }
-  .model-wrap.walk { animation: walkForward 5s cubic-bezier(.35,.1,.45,1) forwards; }
+  .model-wrap.walk { animation: walkForward 5.2s cubic-bezier(.4,.1,.5,1) forwards; }
   @keyframes walkForward {
-    0% { transform: translate(-50%, -84%) scale(.42); opacity: 0; }
-    6% { opacity: 1; }
-    100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+    0% { transform: translate(-50%, -78%) scale(.36); opacity: 0; filter: brightness(.6); }
+    8% { opacity: 1; }
+    100% { transform: translate(-50%, 0) scale(1); opacity: 1; filter: brightness(1); }
   }
-  .model-bob { width: 100%; height: 100%; }
-  #doll { width: 100%; height: 100%; overflow: visible; display: block; }
-  #doll.pop { animation: dollPop .35s ease-out; }
-  @keyframes dollPop { 0% { transform: scale(1); } 40% { transform: scale(1.04) rotate(-1deg); } 100% { transform: scale(1); } }
+  .floor-glow {
+    position: absolute;
+    left: 50%; bottom: -3%;
+    width: 120%; height: 10%;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse at center, rgba(255,255,255,.45), transparent 70%);
+    pointer-events: none;
+  }
+  .model-bob {
+    width: 100%; height: 100%;
+    -webkit-box-reflect: below -3px linear-gradient(transparent 72%, rgba(255,255,255,.22));
+  }
+  #doll {
+    width: 100%; height: 100%;
+    overflow: visible;
+    display: block;
+    transition: filter .06s;
+    filter: drop-shadow(0 6px 10px rgba(0,0,0,.35));
+  }
+  #doll.lit { filter: brightness(1.35) contrast(1.05) drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+  #doll.pop { animation: dollPop .4s ease-out; }
+  @keyframes dollPop { 0% { transform: scale(1); } 40% { transform: scale(1.015); } 100% { transform: scale(1); } }
 
-  /* idle breathing */
-  #doll .breathe { animation: breathe 3s ease-in-out infinite; transform-origin: 100px 340px; }
-  @keyframes breathe { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(1.008); } }
+  #legL { transform-origin: 90px 158px; }
+  #legR { transform-origin: 110px 158px; }
+  #armR { transform-origin: 123px 80px; }
+  #armL { transform-origin: 77px 80px; }
+  #hairBack { transform-origin: 100px 12px; }
+  #skirt { transform-origin: 100px 130px; }
 
-  #legL { transform-origin: 93px 172px; }
-  #legR { transform-origin: 107px 172px; }
-  #armR { transform-origin: 123px 114px; }
-  #hairBack { transform-origin: 100px 50px; }
-  #skirt { transform-origin: 100px 165px; }
-
-  .walking .model-bob, .model-wrap.walk .model-bob { animation: bob .5s ease-in-out infinite; }
+  .model-wrap.walk .model-bob { animation: bob .55s ease-in-out infinite; }
   @keyframes bob {
-    0%,100% { transform: translateY(0) rotate(-1.5deg); }
-    50% { transform: translateY(-2.5%) rotate(1.5deg); }
+    0%,100% { transform: translateY(0) rotate(-.8deg); }
+    50% { transform: translateY(-1.2%) rotate(.8deg); }
   }
-  #doll.walking #legL { animation: stepL .5s ease-in-out infinite; }
-  #doll.walking #legR { animation: stepR .5s ease-in-out infinite; }
-  #doll.walking #hairBack { animation: hairSway .5s ease-in-out infinite; }
-  #doll.walking #skirt { animation: skirtSway .5s ease-in-out infinite; }
-  #doll.walking #armR { animation: armSwing 1s ease-in-out infinite; }
-  @keyframes stepL { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px) rotate(3deg); } }
-  @keyframes stepR { 0%,100% { transform: translateY(-9px) rotate(-3deg); } 50% { transform: translateY(0); } }
-  @keyframes hairSway { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
-  @keyframes skirtSway { 0%,100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
-  @keyframes armSwing { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-8deg); } }
+  #doll.walking #legL { animation: stepL .55s ease-in-out infinite; }
+  #doll.walking #legR { animation: stepR .55s ease-in-out infinite; }
+  #doll.walking #hairBack { animation: hairSway .55s ease-in-out infinite; }
+  #doll.walking #skirt { animation: skirtSway .55s ease-in-out infinite; }
+  #doll.walking #armR { animation: armSwing 1.1s ease-in-out infinite; }
+  @keyframes stepL { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px) rotate(1.5deg); } }
+  @keyframes stepR { 0%,100% { transform: translateY(-5px) rotate(-1.5deg); } 50% { transform: translateY(0); } }
+  @keyframes hairSway { 0%,100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+  @keyframes skirtSway { 0%,100% { transform: rotate(-1.8deg) skewX(1deg); } 50% { transform: rotate(1.8deg) skewX(-1deg); } }
+  @keyframes armSwing { 0%,100% { transform: rotate(3deg); } 50% { transform: rotate(-5deg); } }
 
-  #doll.posing #armR { animation: wave .45s ease-in-out 4 alternate; }
-  #doll.posing #hairBack { animation: hairFlip .8s ease-out; }
-  @keyframes wave { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
-  @keyframes hairFlip { 0% { transform: rotate(0); } 40% { transform: rotate(8deg); } 70% { transform: rotate(-4deg); } 100% { transform: rotate(0); } }
+  #doll.posing #armR { animation: pose 1.6s ease-in-out forwards; }
+  #doll.posing #hairBack { animation: hairFlip .9s ease-out; }
+  @keyframes pose { 0% { transform: rotate(0); } 30%,100% { transform: rotate(-14deg); } }
+  @keyframes hairFlip { 0% { transform: rotate(0); } 40% { transform: rotate(4deg); } 70% { transform: rotate(-2deg); } 100% { transform: rotate(0); } }
 
   .caption {
     position: absolute;
-    top: calc(34% + 14px);
+    top: calc(36% + 14px);
     left: 14px;
-    background: rgba(255,255,255,.92);
-    color: var(--pink-dark);
-    font-weight: 800;
-    font-size: 14px;
-    padding: 8px 16px;
-    border-radius: 999px;
-    box-shadow: 0 4px 16px rgba(0,0,0,.25);
-    white-space: nowrap;
+    max-width: 30%;
+    background: rgba(10, 8, 12, .7);
+    border: 1px solid rgba(255,255,255,.18);
+    color: #fff;
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    backdrop-filter: blur(6px);
     z-index: 7;
     opacity: 0;
     transition: opacity .4s, transform .4s;
-    max-width: 34%;
-    white-space: normal;
-    border-radius: 16px;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
+  .caption b { display: block; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #f48fb1; margin-bottom: 2px; }
   .caption.show { opacity: 1; transform: translateY(-4px); }
-
   .hint {
     position: absolute;
-    right: 14px; bottom: 12px;
-    color: rgba(255,255,255,.75);
+    right: 16px; bottom: 14px;
+    color: rgba(255,255,255,.6);
     font-size: 12px;
-    z-index: 7;
+    letter-spacing: .5px;
+    z-index: 9;
+    transition: opacity .3s;
   }
 
-  /* ---------------- SCORECARD ---------------- */
+  /* ================= SCORECARD ================= */
   .scorecard {
     position: absolute;
     inset: 0;
@@ -398,8 +434,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(40, 8, 52, .55);
-    backdrop-filter: blur(3px);
+    background: rgba(6, 4, 8, .6);
+    backdrop-filter: blur(4px);
     padding: 16px;
     opacity: 0;
     pointer-events: none;
@@ -407,31 +443,30 @@
   }
   .scorecard.show { opacity: 1; pointer-events: auto; }
   .score-panel {
-    background: #fff;
-    border-radius: 26px;
-    padding: 22px 22px 18px;
+    background: #fffafc;
+    border-radius: 22px;
+    padding: 24px 22px 20px;
     width: min(720px, 100%);
     max-height: 100%;
     overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,.4);
-    border: 4px solid #ffc2e0;
-    transform: scale(.85);
-    transition: transform .4s cubic-bezier(.2,1.4,.4,1);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    transform: scale(.9);
+    transition: transform .4s cubic-bezier(.2,1.3,.4,1);
     text-align: center;
   }
   .scorecard.show .score-panel { transform: scale(1); }
   .score-panel h2 {
-    font-family: 'Pacifico', cursive;
-    font-weight: 400;
-    color: var(--pink);
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 500;
     font-size: 32px;
   }
-  .outfit-line { font-size: 13px; color: #9a6a91; margin: 2px 0 14px; }
+  .outfit-line { font-size: 12px; color: var(--muted); margin: 4px 0 16px; letter-spacing: .5px; }
   .judges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   .judge {
-    background: linear-gradient(180deg, #fff6fb, #ffe6f3);
-    border: 2px solid #ffd0e7;
-    border-radius: 18px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 16px;
     padding: 14px 10px;
     opacity: 0;
     transform: translateY(16px);
@@ -439,66 +474,59 @@
   }
   .judge.in { opacity: 1; transform: translateY(0); }
   .judge .avatar {
-    width: 56px; height: 56px; border-radius: 50%;
+    width: 54px; height: 54px; border-radius: 50%;
     margin: 0 auto 6px;
     display: grid; place-items: center;
-    font-size: 30px;
-    background: #fff;
-    box-shadow: 0 3px 10px rgba(255,79,163,.25);
+    font-size: 28px;
+    background: #fbeff4;
   }
-  .judge .name { font-weight: 800; font-size: 14px; }
-  .judge .role { font-size: 11px; color: #a77a9f; margin-bottom: 6px; }
-  .judge .score { font-size: 38px; font-weight: 800; color: var(--pink-dark); line-height: 1.1; }
-  .judge .score small { font-size: 16px; color: #c79abd; }
-  .hearts { font-size: 11px; letter-spacing: 1px; margin: 4px 0 6px; }
-  .judge .comment { font-size: 12.5px; font-style: italic; color: #6d4269; min-height: 36px; }
+  .judge .name { font-weight: 700; font-size: 14px; }
+  .judge .role { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .judge .score { font-family: 'Playfair Display', serif; font-size: 40px; font-weight: 700; color: var(--pink-dark); line-height: 1.1; }
+  .judge .score small { font-family: 'Poppins', sans-serif; font-size: 14px; color: #c9a9b9; }
+  .hearts { font-size: 10px; letter-spacing: 1px; margin: 4px 0 6px; }
+  .judge .comment { font-size: 12.5px; font-style: italic; color: #5d4655; min-height: 36px; }
   .total-box { margin-top: 16px; opacity: 0; transition: opacity .5s; }
   .total-box.in { opacity: 1; }
-  .total { font-size: 22px; font-weight: 800; }
+  .total { font-size: 20px; font-weight: 700; }
   .total span { color: var(--pink-dark); }
   .rank {
     display: inline-block;
     margin-top: 6px;
-    padding: 6px 16px;
+    padding: 6px 18px;
     border-radius: 999px;
-    background: linear-gradient(90deg, #ffe066, #ffb3d9);
-    font-weight: 800;
+    background: #24161f;
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 1px;
   }
   .notes { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
-  .note {
-    font-size: 12px; font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: #f1e7ff; color: #6a3fb8;
-  }
-  .note.bad { background: #ffe9e4; color: #c0422b; }
-  .score-actions { margin-top: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-  .score-actions .btn { padding: 12px 22px; font-size: 15px; }
-  .btn-pink { background: linear-gradient(90deg, #ff4fa3, #ff7cbc); color: #fff; }
-  .btn-purple { background: linear-gradient(90deg, #a46bff, #c79bff); color: #fff; }
+  .note { font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: #f6e9f0; color: #8a2a58; }
+  .note.bad { background: #fde8e4; color: #b23a22; }
+  .score-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .score-actions .btn { padding: 12px 22px; font-size: 14px; }
+  .btn-pink { background: linear-gradient(90deg, #c2185b, #e8417f); color: #fff; }
+  .btn-dark { background: #24161f; color: #fff; }
 
   .confetti {
     position: absolute;
     top: -20px;
-    width: 10px; height: 14px;
+    width: 8px; height: 12px;
     z-index: 11;
     pointer-events: none;
     animation: fall linear forwards;
   }
-  @keyframes fall {
-    to { transform: translateY(110vh) rotate(720deg); }
-  }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
 
-  /* ---------------- RESPONSIVE ---------------- */
   @media (max-width: 820px) {
     body { overflow: auto; }
     .app { flex-direction: column-reverse; height: auto; }
-    .stage { height: 72vh; min-height: 460px; flex: none; }
-    .sidebar { width: 100%; border-right: none; border-top: 4px solid #ffc2e0; overflow: visible; padding: 16px; }
+    .stage { height: 74vh; min-height: 480px; flex: none; }
+    .sidebar { width: 100%; border-right: none; overflow: visible; padding: 16px; }
     .options { grid-template-columns: 1fr 1fr 1fr; }
     .opt-btn { flex-direction: column; text-align: center; font-size: 12px; gap: 4px; padding: 8px 4px; }
     .judges { grid-template-columns: 1fr; }
-    .crowd { width: 26%; }
+    .caption { max-width: 60%; }
   }
 </style>
 </head>
@@ -507,139 +535,218 @@
   <!-- ============ DRESSING ROOM ============ -->
   <aside class="sidebar">
     <h1>Dressing Room</h1>
-    <p class="subtitle">Style your doll, then strut the runway!</p>
+    <p class="subtitle">Style the look · Walk the show</p>
     <div id="categories"></div>
-    <div class="action-row">
-      <button class="btn btn-random" id="randomBtn">🎲 Surprise Me!</button>
-    </div>
-    <button class="btn btn-start" id="startBtn">✨ Start Runway Show ✨</button>
+    <button class="btn btn-random" id="randomBtn">🎲 Surprise Me</button>
+    <button class="btn btn-start" id="startBtn">Start Runway Show</button>
   </aside>
 
   <!-- ============ STAGE ============ -->
   <main class="stage" id="stage">
     <div class="backwall">
-      <div class="bulb-row" id="bulbRow"></div>
-      <div class="sign">✨ Glam Runway ✨</div>
+      <div class="brand"><div class="name">GLAM RUNWAY</div><div class="season">FALL · WINTER COLLECTION</div></div>
+      <div class="portal"></div>
     </div>
+    <div class="floor-dark"></div>
     <div class="flash-layer" id="flashBack"></div>
     <div class="runway-edge"></div>
     <div class="runway"></div>
-    <div class="spot spot-l"></div>
-    <div class="spot spot-r"></div>
-    <div class="crowd crowd-l" id="crowdL"></div>
-    <div class="crowd crowd-r" id="crowdR"></div>
+    <div class="crowd" id="crowd"></div>
+    <div class="beam beam-l"></div>
+    <div class="beam beam-c"></div>
+    <div class="beam beam-r"></div>
+    <div class="haze"></div>
 
     <div class="model-wrap" id="modelWrap">
+      <div class="floor-glow"></div>
       <div class="model-bob">
         <svg id="doll" viewBox="0 0 200 360" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <pattern id="pGlitter" width="8" height="8" patternUnits="userSpaceOnUse">
-              <rect width="8" height="8" fill="#ff4fa3"/>
-              <circle cx="2" cy="2" r=".9" fill="#fff"/>
-              <circle cx="6" cy="5" r=".7" fill="#ffd6ec"/>
-              <circle cx="4" cy="7" r=".5" fill="#fff" opacity=".8"/>
-              <circle cx="7" cy="1" r=".4" fill="#ffe97a"/>
+            <!-- ---------- SKIN ---------- -->
+            <linearGradient id="skinH" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#b9785c"/>
+              <stop offset=".18" stop-color="#dfa585"/>
+              <stop offset=".45" stop-color="#f6cfb4"/>
+              <stop offset=".62" stop-color="#f1c2a3"/>
+              <stop offset=".85" stop-color="#d69a7b"/>
+              <stop offset="1" stop-color="#ad6f55"/>
+            </linearGradient>
+            <linearGradient id="skinTorso" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#c38466"/>
+              <stop offset=".2" stop-color="#e7b293"/>
+              <stop offset=".42" stop-color="#f8d4bb"/>
+              <stop offset=".6" stop-color="#f4c9ad"/>
+              <stop offset=".82" stop-color="#e0a687"/>
+              <stop offset="1" stop-color="#b97a5d"/>
+            </linearGradient>
+            <radialGradient id="skinFace" cx=".46" cy=".42" r=".62">
+              <stop offset="0" stop-color="#fbdcc6"/>
+              <stop offset=".55" stop-color="#f3c6a8"/>
+              <stop offset=".85" stop-color="#dfa385"/>
+              <stop offset="1" stop-color="#c2846a"/>
+            </radialGradient>
+            <radialGradient id="iris" cx=".5" cy=".5" r=".5">
+              <stop offset="0" stop-color="#9fd0f2"/>
+              <stop offset=".45" stop-color="#4f93c9"/>
+              <stop offset=".85" stop-color="#28507f"/>
+              <stop offset="1" stop-color="#13243d"/>
+            </radialGradient>
+            <linearGradient id="lips" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#c9476d"/>
+              <stop offset="1" stop-color="#a42a50"/>
+            </linearGradient>
+            <linearGradient id="shadeDown" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#5a2a1c" stop-opacity=".55"/>
+              <stop offset="1" stop-color="#5a2a1c" stop-opacity="0"/>
+            </linearGradient>
+
+            <!-- ---------- HAIR ---------- -->
+            <linearGradient id="hairGrad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="160">
+              <stop offset="0" stop-color="#b88a3a"/>
+              <stop offset=".06" stop-color="#fbedc0"/>
+              <stop offset=".11" stop-color="#e2bd6c"/>
+              <stop offset=".2" stop-color="#cfa452"/>
+              <stop offset=".32" stop-color="#f3dc9c"/>
+              <stop offset=".45" stop-color="#d4aa5b"/>
+              <stop offset=".6" stop-color="#ecd08b"/>
+              <stop offset=".78" stop-color="#c99b48"/>
+              <stop offset="1" stop-color="#e9cf8e"/>
+            </linearGradient>
+            <linearGradient id="hairDeep" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="160">
+              <stop offset="0" stop-color="#7a5523"/>
+              <stop offset=".5" stop-color="#9c7334"/>
+              <stop offset="1" stop-color="#8a6329"/>
+            </linearGradient>
+
+            <!-- ---------- FABRICS ---------- -->
+            <radialGradient id="sequin" cx=".35" cy=".35" r=".7">
+              <stop offset="0" stop-color="#fff0f7"/>
+              <stop offset=".35" stop-color="#ff7fb8"/>
+              <stop offset=".8" stop-color="#c2185b"/>
+              <stop offset="1" stop-color="#7d0c3a"/>
+            </radialGradient>
+            <pattern id="pSequin" width="2.4" height="2.1" patternUnits="userSpaceOnUse">
+              <rect width="2.4" height="2.1" fill="#8e1046"/>
+              <circle cx=".6" cy=".55" r=".62" fill="url(#sequin)"/>
+              <circle cx="1.8" cy="1.6" r=".62" fill="url(#sequin)"/>
             </pattern>
-            <pattern id="pRib" width="3" height="3" patternUnits="userSpaceOnUse">
-              <rect width="3" height="3" fill="#ffffff"/>
-              <rect width="1" height="3" fill="#ebe4ee"/>
+            <linearGradient id="sheen" gradientUnits="userSpaceOnUse" x1="60" y1="70" x2="140" y2="120">
+              <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+              <stop offset=".45" stop-color="#fff" stop-opacity="0"/>
+              <stop offset=".5" stop-color="#fff" stop-opacity=".55"/>
+              <stop offset=".55" stop-color="#fff" stop-opacity="0"/>
+              <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+              <animateTransform attributeName="gradientTransform" type="translate" values="-80 0; 80 0" dur="2.6s" repeatCount="indefinite"/>
+            </linearGradient>
+            <pattern id="pRib" width="1.4" height="4" patternUnits="userSpaceOnUse">
+              <rect width="1.4" height="4" fill="#f6f3ee"/>
+              <rect width=".45" height="4" fill="#d9d3cb"/>
+              <rect x=".45" width=".25" height="4" fill="#ffffff"/>
             </pattern>
             <linearGradient id="gNeon" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#9bff4a"/>
-              <stop offset="1" stop-color="#2cf26a"/>
+              <stop offset="0" stop-color="#b6ff3d"/>
+              <stop offset="1" stop-color="#5df03a"/>
             </linearGradient>
-            <pattern id="pPlaid" width="14" height="14" patternUnits="userSpaceOnUse">
-              <rect width="14" height="14" fill="#d8344f"/>
-              <rect x="0" y="5" width="14" height="4" fill="#1f2a5c" opacity=".55"/>
-              <rect x="5" y="0" width="4" height="14" fill="#1f2a5c" opacity=".55"/>
-              <rect x="0" y="11.5" width="14" height="1" fill="#ffd54a" opacity=".85"/>
-              <rect x="11.5" y="0" width="1" height="14" fill="#ffd54a" opacity=".85"/>
+            <pattern id="pPlaid" width="12" height="12" patternUnits="userSpaceOnUse">
+              <rect width="12" height="12" fill="#a51d2d"/>
+              <rect y="3.5" width="12" height="4" fill="#14203f" opacity=".7"/>
+              <rect x="3.5" width="4" height="12" fill="#14203f" opacity=".7"/>
+              <rect y="9.6" width="12" height=".6" fill="#e9c349" opacity=".9"/>
+              <rect x="9.6" width=".6" height="12" fill="#e9c349" opacity=".9"/>
+              <rect y="1.2" width="12" height=".35" fill="#ffffff" opacity=".35"/>
+              <rect x="1.2" width=".35" height="12" fill="#ffffff" opacity=".35"/>
+              <path d="M0 12 L12 0 M-3 3 L3 -3 M9 15 L15 9" stroke="#000" stroke-width=".35" opacity=".18"/>
+              <path d="M0 6 L6 0 M6 12 L12 6" stroke="#000" stroke-width=".35" opacity=".18"/>
             </pattern>
-            <pattern id="pDenim" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-              <rect width="4" height="4" fill="#4f7fbf"/>
-              <rect width="2" height="4" fill="#6190d1"/>
+            <pattern id="pDenim" width="1.6" height="1.6" patternUnits="userSpaceOnUse" patternTransform="rotate(60)">
+              <rect width="1.6" height="1.6" fill="#3f6497"/>
+              <rect width=".8" height="1.6" fill="#5579ab"/>
             </pattern>
             <linearGradient id="gPastel" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#ffd3e6"/>
-              <stop offset="1" stop-color="#ffb3d4"/>
+              <stop offset="0" stop-color="#f9d4e2"/>
+              <stop offset="1" stop-color="#f1b3cb"/>
             </linearGradient>
-            <linearGradient id="gHair" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#ffe98a"/>
-              <stop offset="1" stop-color="#f5c94e"/>
+            <linearGradient id="pleatG" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#fff" stop-opacity=".22"/>
+              <stop offset=".35" stop-color="#fff" stop-opacity=".04"/>
+              <stop offset="1" stop-color="#000" stop-opacity=".32"/>
             </linearGradient>
+            <linearGradient id="volH" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#000" stop-opacity=".45"/>
+              <stop offset=".16" stop-color="#000" stop-opacity=".1"/>
+              <stop offset=".42" stop-color="#fff" stop-opacity=".14"/>
+              <stop offset=".6" stop-color="#000" stop-opacity="0"/>
+              <stop offset=".85" stop-color="#000" stop-opacity=".14"/>
+              <stop offset="1" stop-color="#000" stop-opacity=".48"/>
+            </linearGradient>
+            <linearGradient id="gloss" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ff6fae"/>
+              <stop offset=".5" stop-color="#e01b74"/>
+              <stop offset="1" stop-color="#7c0838"/>
+            </linearGradient>
+            <linearGradient id="suede" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#a35a72"/>
+              <stop offset=".35" stop-color="#e3a2b6"/>
+              <stop offset=".6" stop-color="#d48ea4"/>
+              <stop offset="1" stop-color="#8f4a61"/>
+            </linearGradient>
+            <linearGradient id="white3d" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#b9b4bd"/>
+              <stop offset=".3" stop-color="#f4f2f5"/>
+              <stop offset=".55" stop-color="#ffffff"/>
+              <stop offset="1" stop-color="#a7a2ab"/>
+            </linearGradient>
+
+            <!-- ---------- FILTERS ---------- -->
+            <filter id="b05" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation=".5"/></filter>
+            <filter id="b1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1"/></filter>
+            <filter id="b2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2"/></filter>
+            <filter id="b4" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+            <filter id="fabric" x="0" y="0" width="100%" height="100%">
+              <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="4" result="n"/>
+              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 -.18" result="a"/>
+              <feComposite in="a" in2="SourceGraphic" operator="in" result="t"/>
+              <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="t"/></feMerge>
+            </filter>
           </defs>
 
-          <g class="breathe">
-            <ellipse cx="100" cy="350" rx="34" ry="5" fill="rgba(0,0,0,.18)"/>
-            <g id="hairBack"></g>
+          <!-- contact shadow -->
+          <ellipse cx="100" cy="352" rx="22" ry="3.2" fill="#000" opacity=".5" filter="url(#b2)"/>
 
-            <!-- legs + shoes -->
-            <g id="legL">
-              <path d="M86 168 L100 168 L97 250 L95 337 L88 337 L86 250 Z" fill="#fcd9c0" stroke="#efbf9f" stroke-width=".8"/>
-              <g id="shoeL"></g>
-            </g>
-            <g id="legR">
-              <path d="M100 168 L114 168 L114 250 L112 337 L105 337 L103 250 Z" fill="#fcd9c0" stroke="#efbf9f" stroke-width=".8"/>
-              <g id="shoeR"></g>
-            </g>
+          <g id="hairBack"></g>
 
-            <!-- neck & torso -->
-            <rect x="94" y="88" width="12" height="26" rx="4" fill="#fcd9c0"/>
-            <path d="M78 112 Q100 104 122 112 L120 135 Q112 150 112 170 L88 170 Q88 150 80 135 Z" fill="#fcd9c0" stroke="#efbf9f" stroke-width=".8"/>
-            <circle cx="100" cy="160" r="1.2" fill="#e8a988"/>
+          <!-- ---------- LEGS ---------- -->
+          <g id="legL"><g id="legLBody"></g><g id="shoeL"></g></g>
+          <g id="legR"><g id="legRBody"></g><g id="shoeR"></g></g>
 
-            <g id="skirt"></g>
+          <!-- ---------- NECK + TORSO ---------- -->
+          <g id="torso"></g>
 
-            <!-- arms -->
-            <g id="armL">
-              <path d="M77 115 L60 147 L84 166" fill="none" stroke="#fcd9c0" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="85" cy="167" r="5" fill="#fcd9c0"/>
-            </g>
-            <g id="armR">
-              <path d="M123 114 L140 88 L146 62" fill="none" stroke="#fcd9c0" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <ellipse cx="146.5" cy="57" rx="5.5" ry="6.5" fill="#fcd9c0"/>
-              <path d="M143 52 L142 48 M146 51 L146 47 M149 52 L150 48" stroke="#fcd9c0" stroke-width="2.4" stroke-linecap="round"/>
-              <circle cx="146.5" cy="50.5" r="1" fill="#ff4fa3"/>
-            </g>
+          <g id="skirt"></g>
 
-            <g id="top"></g>
+          <!-- ---------- ARMS ---------- -->
+          <g id="armL"></g>
+          <g id="armR"></g>
 
-            <!-- head & face -->
-            <ellipse cx="100" cy="68" rx="25" ry="29" fill="#fcd9c0" stroke="#efbf9f" stroke-width=".8"/>
-            <g id="face">
-              <path d="M84 62 Q90 58.5 95 61.5" stroke="#c9962f" stroke-width="1.3" fill="none" stroke-linecap="round"/>
-              <path d="M105 61.5 Q110 58.5 116 62" stroke="#c9962f" stroke-width="1.3" fill="none" stroke-linecap="round"/>
-              <ellipse cx="90" cy="70" rx="5" ry="6" fill="#fff"/>
-              <ellipse cx="110" cy="70" rx="5" ry="6" fill="#fff"/>
-              <circle cx="90" cy="71" r="3.7" fill="#3a8dde"/>
-              <circle cx="110" cy="71" r="3.7" fill="#3a8dde"/>
-              <circle cx="90" cy="71" r="1.7" fill="#1b2a4a"/>
-              <circle cx="110" cy="71" r="1.7" fill="#1b2a4a"/>
-              <circle cx="91.3" cy="69.5" r="1.1" fill="#fff"/>
-              <circle cx="111.3" cy="69.5" r="1.1" fill="#fff"/>
-              <path d="M84.5 67 Q90 62.5 95.5 67" stroke="#2d1b2b" stroke-width="1.7" fill="none" stroke-linecap="round"/>
-              <path d="M104.5 67 Q110 62.5 115.5 67" stroke="#2d1b2b" stroke-width="1.7" fill="none" stroke-linecap="round"/>
-              <path d="M84.5 67 L82.5 65 M86 65.3 L84.6 63 M115.5 67 L117.5 65 M114 65.3 L115.4 63" stroke="#2d1b2b" stroke-width="1.1" stroke-linecap="round"/>
-              <path d="M100 74 Q98 79 101 80" stroke="#e0a98a" stroke-width="1.1" fill="none" stroke-linecap="round"/>
-              <circle cx="84" cy="81" r="4.5" fill="#ff8fc0" opacity=".5"/>
-              <circle cx="116" cy="81" r="4.5" fill="#ff8fc0" opacity=".5"/>
-              <path d="M93.5 85 Q97 82.6 100 84.4 Q103 82.6 106.5 85 Q100 92 93.5 85 Z" fill="#ff3d8b"/>
-              <path d="M96 86.3 Q100 88 104 86.3" stroke="#fff" stroke-width=".7" fill="none" opacity=".7"/>
-            </g>
-            <g id="hairFront"></g>
-          </g>
+          <g id="top"></g>
+
+          <!-- ---------- HEAD ---------- -->
+          <g id="head"></g>
+          <g id="hairFront"></g>
         </svg>
       </div>
     </div>
 
     <div class="flash-layer front" id="flashFront"></div>
     <div class="caption" id="caption"></div>
-    <div class="hint" id="hint">Pick an outfit, then hit “Start Runway Show”!</div>
+    <div class="vignette"></div>
+    <div class="grain"></div>
+    <div class="hint" id="hint">Choose a look, then press “Start Runway Show”</div>
     <div class="white-out" id="whiteOut"></div>
 
     <div class="scorecard" id="scorecard">
       <div class="score-panel">
-        <h2>Judges' Scorecard</h2>
+        <h2>The Judges’ Verdict</h2>
         <div class="outfit-line" id="outfitLine"></div>
         <div class="judges" id="judges"></div>
         <div class="total-box" id="totalBox">
@@ -649,7 +756,7 @@
         </div>
         <div class="score-actions">
           <button class="btn btn-pink" id="restyleBtn">💄 Restyle Outfit</button>
-          <button class="btn btn-purple" id="againBtn">🔁 Walk Again</button>
+          <button class="btn btn-dark" id="againBtn">🔁 Walk Again</button>
         </div>
       </div>
     </div>
@@ -664,35 +771,35 @@
    ========================================================= */
 const CATALOG = {
   hair: {
-    label: '💇‍♀️ Hairstyles',
+    label: 'Hairstyles',
     items: {
-      ponytail: { name: 'High Ponytail', swatch: 'linear-gradient(135deg,#ffe98a,#ff7cbc)', cute: 8, style: 7, vibes: ['sporty', 'cute'] },
-      bob:      { name: 'Bob Cut',       swatch: 'linear-gradient(135deg,#ffe98a,#f5c94e)', cute: 7, style: 9, vibes: ['edgy', 'classic'] },
-      waves:    { name: 'Long Waves',    swatch: 'linear-gradient(135deg,#fff3b0,#f5c94e)', cute: 9, style: 8, vibes: ['glam', 'cute'] }
+      ponytail: { name: 'High Ponytail', swatch: 'linear-gradient(135deg,#fbedc0,#c99b48)', cute: 8, style: 7, vibes: ['sporty', 'cute'] },
+      bob:      { name: 'Bob Cut',       swatch: 'linear-gradient(135deg,#f3dc9c,#b88a3a)', cute: 7, style: 9, vibes: ['edgy', 'classic'] },
+      waves:    { name: 'Long Waves',    swatch: 'linear-gradient(135deg,#fff3cf,#d4aa5b)', cute: 9, style: 8, vibes: ['glam', 'cute'] }
     }
   },
   top: {
-    label: '👚 Crop Tops',
+    label: 'Crop Tops',
     items: {
-      pinkGlitter: { name: 'Pink Glitter Top',  swatch: 'radial-gradient(circle at 30% 30%,#fff 0 8%,#ff4fa3 12%)', cute: 9, style: 8, vibes: ['glam', 'pink'] },
-      whiteTee:    { name: 'White Ribbed Tee',  swatch: 'repeating-linear-gradient(90deg,#fff 0 3px,#e6dde9 3px 4px)', cute: 7, style: 8, vibes: ['classic', 'sporty'] },
-      neonGreen:   { name: 'Neon Green Crop',   swatch: 'linear-gradient(135deg,#9bff4a,#2cf26a)', cute: 6, style: 8, vibes: ['edgy', 'sporty'] }
+      pinkGlitter: { name: 'Pink Glitter Top', swatch: 'radial-gradient(circle at 30% 30%,#fff0f7 0 10%,#ff7fb8 25%,#c2185b 70%)', cute: 9, style: 8, vibes: ['glam', 'pink'] },
+      whiteTee:    { name: 'White Ribbed Tee', swatch: 'repeating-linear-gradient(90deg,#f6f3ee 0 3px,#d9d3cb 3px 4px)', cute: 7, style: 8, vibes: ['classic', 'sporty'] },
+      neonGreen:   { name: 'Neon Green Crop',  swatch: 'linear-gradient(135deg,#d2ff6a,#5df03a)', cute: 6, style: 8, vibes: ['edgy', 'sporty'] }
     }
   },
   skirt: {
-    label: '👗 Pleated Skirts',
+    label: 'Pleated Skirts',
     items: {
-      plaid:      { name: 'Classic Plaid Skirt',    swatch: 'repeating-linear-gradient(0deg,#d8344f 0 4px,#1f2a5c 4px 6px),#d8344f', cute: 8, style: 9, vibes: ['classic', 'edgy'] },
-      pastelPink: { name: 'Pastel Pink Pleated',    swatch: 'linear-gradient(135deg,#ffd3e6,#ffb3d4)', cute: 10, style: 7, vibes: ['pink', 'cute', 'glam'] },
-      denim:      { name: 'Denim Skirt',            swatch: 'linear-gradient(135deg,#6190d1,#3d6aa8)', cute: 7, style: 8, vibes: ['sporty', 'edgy'] }
+      plaid:      { name: 'Classic Plaid Skirt', swatch: 'repeating-linear-gradient(0deg,#a51d2d 0 4px,#14203f 4px 6px),#a51d2d', cute: 8, style: 9, vibes: ['classic', 'edgy'] },
+      pastelPink: { name: 'Pastel Pink Pleated', swatch: 'linear-gradient(135deg,#fbe1eb,#f1b3cb)', cute: 10, style: 7, vibes: ['pink', 'cute', 'glam'] },
+      denim:      { name: 'Denim Skirt',         swatch: 'linear-gradient(135deg,#5579ab,#2f4f7d)', cute: 7, style: 8, vibes: ['sporty', 'edgy'] }
     }
   },
   shoes: {
-    label: '👠 Shoes',
+    label: 'Shoes',
     items: {
-      sneakers: { name: 'White Sneakers',  swatch: 'linear-gradient(135deg,#fff 60%,#ff8cc6 60%)', cute: 7, style: 7, vibes: ['sporty', 'cute'] },
-      heels:    { name: 'Pink High Heels', swatch: 'linear-gradient(135deg,#ff2d95,#ff7cbc)', cute: 9, style: 9, vibes: ['glam', 'pink'] },
-      boots:    { name: 'Cute Boots',      swatch: 'linear-gradient(135deg,#f7a8c8,#fff 85%)', cute: 8, style: 9, vibes: ['edgy', 'classic', 'cute'] }
+      sneakers: { name: 'White Sneakers',  swatch: 'linear-gradient(135deg,#ffffff 55%,#e8417f 55%)', cute: 7, style: 7, vibes: ['sporty', 'cute'] },
+      heels:    { name: 'Pink High Heels', swatch: 'linear-gradient(135deg,#ff6fae,#7c0838)', cute: 9, style: 9, vibes: ['glam', 'pink'] },
+      boots:    { name: 'Cute Boots',      swatch: 'linear-gradient(135deg,#e3a2b6,#8f4a61)', cute: 8, style: 9, vibes: ['edgy', 'classic', 'cute'] }
     }
   }
 };
@@ -700,167 +807,458 @@ const CATALOG = {
 const state = { hair: 'waves', top: 'pinkGlitter', skirt: 'pastelPink', shoes: 'heels' };
 
 /* =========================================================
-   SVG DRAWING — HAIR
+   GEOMETRY HELPERS
    ========================================================= */
-const HAIR_FILL = 'fill="url(#gHair)" stroke="#e0b13c" stroke-width="1.2" stroke-linejoin="round"';
-const HAIR_SHINE = 'fill="none" stroke="#fff6c4" stroke-width="2" stroke-linecap="round" opacity=".85"';
+const $ = id => document.getElementById(id);
+const doll = $('doll');
 
-const HAIR = {
-  waves: {
-    back: `
-      <path ${HAIR_FILL} d="M72 58 C62 90 70 110 64 135 C58 160 72 175 66 200 C80 214 92 206 100 210
-        C108 206 120 214 134 200 C128 175 142 160 136 135 C130 110 138 90 128 58 C120 30 80 30 72 58 Z"/>
-      <path ${HAIR_SHINE} d="M76 80 C70 110 80 140 72 185"/>
-      <path ${HAIR_SHINE} d="M124 80 C130 110 120 140 128 185"/>
-      <path fill="none" stroke="#e0b13c" stroke-width="1" d="M88 120 C84 150 92 170 86 200 M112 120 C116 150 108 170 114 200"/>`,
-    front: `
-      <path ${HAIR_FILL} d="M73 74 C68 40 88 32 102 33 C122 33 132 46 127 76 C122 58 114 50 104 48 C97 60 86 66 73 74 Z"/>
-      <path ${HAIR_FILL} d="M74 62 C66 90 80 110 72 135 C70 146 76 154 81 151 C85 130 78 110 82 90 C83 78 80 68 78 62 Z"/>
-      <path ${HAIR_FILL} d="M126 62 C134 90 120 110 128 135 C130 146 124 154 119 151 C115 130 122 110 118 90 C117 78 120 68 122 62 Z"/>
-      <path ${HAIR_SHINE} d="M86 40 C96 36 110 37 118 44"/>`
-  },
-  ponytail: {
-    back: `
-      <path ${HAIR_FILL} d="M96 34 C120 8 158 28 149 72 C143 104 154 128 138 162 C135 134 127 112 130 84 C132 62 120 46 100 44 Z"/>
-      <path ${HAIR_SHINE} d="M132 32 C148 56 136 100 142 140"/>
-      <path ${HAIR_FILL} d="M74 66 C74 38 126 38 126 66 Z"/>`,
-    front: `
-      <path ${HAIR_FILL} d="M74 72 C69 36 131 36 126 72 C121 53 110 47 100 47 C88 47 78 54 74 72 Z"/>
-      <path ${HAIR_SHINE} d="M84 44 C94 39 108 39 117 45"/>
-      <ellipse cx="100" cy="35" rx="10" ry="5.5" fill="#ff4fa3" stroke="#d1006b" stroke-width="1"/>
-      <circle cx="93" cy="35" r="2" fill="#ff8cc6"/><circle cx="100" cy="33" r="2" fill="#ff8cc6"/><circle cx="107" cy="35" r="2" fill="#ff8cc6"/>`
-  },
-  bob: {
-    back: `
-      <path ${HAIR_FILL} d="M70 66 C66 28 134 28 130 66 L133 102 C120 109 80 109 67 102 Z"/>`,
-    front: `
-      <path ${HAIR_FILL} d="M73 70 C70 33 130 33 127 70 L127 58 C110 53 90 53 73 58 Z"/>
-      <path ${HAIR_FILL} d="M69 57 L80 57 C77 76 78 90 82 104 L66 101 Z"/>
-      <path ${HAIR_FILL} d="M131 57 L120 57 C123 76 122 90 118 104 L134 101 Z"/>
-      <path d="M90 55 L90 58 M100 54 L100 57.5 M110 55 L110 58" stroke="#e0b13c" stroke-width=".9"/>
-      <path ${HAIR_SHINE} d="M82 42 C92 37 108 37 118 42"/>
-      <path d="M74 52 C80 34 120 34 126 52" fill="none" stroke="#ff4fa3" stroke-width="4" stroke-linecap="round"/>
-      <path d="M116 40 L110 35 L111 44 Z M116 40 L122 35 L121 44 Z" fill="#ff4fa3" stroke="#d1006b" stroke-width=".8"/>
-      <circle cx="116" cy="40" r="2.2" fill="#ff8cc6" stroke="#d1006b" stroke-width=".6"/>`
+// small seeded RNG so hair strands look the same every time a style is picked
+function rng(seed) {
+  return function () {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const lerp = (a, b, t) => a + (b - a) * t;
+const f = n => n.toFixed(2);
+
+// mirror a path (made only of M/L/C/Q/Z commands with x y pairs) across x = 100
+function mirror(d) {
+  return d.replace(/(-?\d*\.?\d+)[ ,](-?\d*\.?\d+)/g, (m, x, y) => `${f(200 - parseFloat(x))} ${y}`);
+}
+
+// Catmull-Rom sampling of a polyline into a dense list of points
+function densify(pts, m) {
+  const out = [];
+  const segs = pts.length - 1;
+  for (let i = 0; i <= m; i++) {
+    const u = (i / m) * segs;
+    const k = Math.min(segs - 1, Math.floor(u));
+    const t = u - k;
+    const p0 = pts[Math.max(0, k - 1)], p1 = pts[k], p2 = pts[k + 1], p3 = pts[Math.min(pts.length - 1, k + 2)];
+    const t2 = t * t, t3 = t2 * t;
+    const c = (a, b, c2, d) => 0.5 * ((2 * b) + (-a + c2) * t + (2 * a - 5 * b + 4 * c2 - d) * t2 + (-a + 3 * b - 3 * c2 + d) * t3);
+    out.push([c(p0[0], p1[0], p2[0], p3[0]), c(p0[1], p1[1], p2[1], p3[1])]);
   }
-};
+  return out;
+}
+
+// smooth SVG path through points
+function smooth(pts) {
+  let d = `M${f(pts[0][0])} ${f(pts[0][1])}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += ` C${f(c1[0])} ${f(c1[1])} ${f(c2[0])} ${f(c2[1])} ${f(p2[0])} ${f(p2[1])}`;
+  }
+  return d;
+}
+
+// a tapered limb segment (quad) between two joints
+function limb(a, b, wa, wb) {
+  const dx = b[0] - a[0], dy = b[1] - a[1];
+  const len = Math.hypot(dx, dy);
+  const nx = -dy / len, ny = dx / len;
+  return `M${f(a[0] + nx * wa / 2)} ${f(a[1] + ny * wa / 2)} L${f(b[0] + nx * wb / 2)} ${f(b[1] + ny * wb / 2)}
+    L${f(b[0] - nx * wb / 2)} ${f(b[1] - ny * wb / 2)} L${f(a[0] - nx * wa / 2)} ${f(a[1] - ny * wa / 2)} Z`;
+}
+
+let clipId = 0;
+function clipped(d, inner, fill) {
+  const id = 'c' + (clipId++);
+  const parts = Array.isArray(d) ? d : [d];
+  return `<clipPath id="${id}">${parts.map(p => `<path d="${p}"/>`).join('')}</clipPath>
+    ${parts.map(p => `<path d="${p}" fill="${fill}"/>`).join('')}
+    <g clip-path="url(#${id})">${inner}</g>`;
+}
 
 /* =========================================================
-   SVG DRAWING — TOPS
+   HAIR — built from hundreds of individual strands
    ========================================================= */
-const TOP_SHAPE = 'M76 111 L91 107 Q100 120 109 107 L124 111 L122 134 Q119 144 118 151 L82 151 Q81 144 78 134 Z';
+const HAIR_TONES = ['#fbedc0', '#f3dc9c', '#e2bd6c', '#d4aa5b', '#c99b48', '#fff6da', '#b88a3a'];
 
-function sparkle(x, y, s, delay) {
-  return `<path d="M${x} ${y - s} L${x + s * .25} ${y - s * .25} L${x + s} ${y} L${x + s * .25} ${y + s * .25}
-    L${x} ${y + s} L${x - s * .25} ${y + s * .25} L${x - s} ${y} L${x - s * .25} ${y - s * .25} Z" fill="#fff">
-    <animate attributeName="opacity" values="0;1;0" dur="1.3s" begin="${delay}s" repeatCount="indefinite"/></path>`;
+// strands spread between an inner and outer guide curve
+function strandSheet(inner, outer, opts) {
+  const { n = 80, seed = 1, wave = 0, waveStart = 40, freq = .14, jitter = .6, taper = 0, ragged = .08 } = opts;
+  const r = rng(seed);
+  const A = densify(inner, 30), B = densify(outer, 30);
+  const base = [], main = [], hi = [];
+
+  // solid under-mass so there are no gaps between strands
+  const massLen = Math.round(A.length * (1 - ragged * .9));
+  const massPts = A.slice(0, massLen).concat(B.slice(0, massLen).reverse()).map(p => [p[0] + waveOff(p[1], 0, wave, waveStart, freq), p[1]]);
+  let mass = `M${f(massPts[0][0])} ${f(massPts[0][1])}` + massPts.slice(1).map(p => ` L${f(p[0])} ${f(p[1])}`).join('') + ' Z';
+  base.push(`<path d="${mass}" fill="url(#hairDeep)" filter="url(#b05)"/>`);
+
+  for (let i = 0; i < n; i++) {
+    const t = Math.min(1, Math.max(0, (i + r() * .9) / n));
+    const phase = (r() - .5) * .8;
+    const lenCut = 1 - r() * ragged - taper * Math.abs(t - .5);
+    const count = Math.max(4, Math.round(A.length * lenCut));
+    const pts = [];
+    for (let k = 0; k < count; k++) {
+      const x = lerp(A[k][0], B[k][0], t) + (k > 2 ? (r() - .5) * jitter * .4 : 0);
+      const y = lerp(A[k][1], B[k][1], t);
+      pts.push([x + waveOff(y, phase, wave, waveStart, freq), y]);
+    }
+    const d = smooth(pts);
+    const roll = r();
+    if (roll < .3) {
+      base.push(`<path d="${d}" stroke="url(#hairDeep)" stroke-width="${f(1 + r() * .8)}" fill="none" opacity=".9"/>`);
+    } else if (roll < .88) {
+      const stroke = r() < .65 ? 'url(#hairGrad)' : HAIR_TONES[Math.floor(r() * HAIR_TONES.length)];
+      main.push(`<path d="${d}" stroke="${stroke}" stroke-width="${f(.35 + r() * .55)}" fill="none" opacity="${f(.6 + r() * .4)}" stroke-linecap="round"/>`);
+    } else {
+      hi.push(`<path d="${d}" stroke="#fffbea" stroke-width="${f(.2 + r() * .25)}" fill="none" opacity="${f(.35 + r() * .35)}" stroke-linecap="round"/>`);
+    }
+  }
+  return base.join('') + main.join('') + hi.join('');
 }
+function waveOff(y, phase, amp, start, freq) {
+  if (!amp || y < start) return 0;
+  const ramp = Math.min(1, (y - start) / 25);
+  return Math.sin(y * freq + phase) * amp * ramp;
+}
+const mirrorPts = pts => pts.map(p => [200 - p[0], p[1]]);
+
+// soft shadow the hair casts on the forehead/cheeks
+function hairShadow(pts, dx) {
+  const d = smooth(densify(pts, 12).map(p => [p[0] + dx, p[1] + 1]));
+  return `<path d="${d}" stroke="#5a2e1c" stroke-width="3" fill="none" opacity=".35" filter="url(#b1)"/>`;
+}
+
+function buildHair(style) {
+  if (style === 'waves') {
+    const innerL = [[99.5, 14.5], [93, 16.5], [88, 25], [86, 40], [86.5, 56], [85, 80], [86, 110], [88, 142]];
+    const outerL = [[99.5, 13], [90, 9.5], [82, 18], [79.5, 36], [77, 58], [72.5, 85], [70.5, 115], [72, 146]];
+    const backInL = [[100, 14], [97, 30], [92, 70], [90, 148]];
+    const backOutL = [[100, 12], [81, 20], [70, 70], [66, 150]];
+    const w = { wave: 2.2, waveStart: 48, freq: .13, ragged: .36 };
+    return {
+      back: strandSheet(backInL, backOutL, { n: 70, seed: 11, ...w }) +
+            strandSheet(mirrorPts(backInL), mirrorPts(backOutL), { n: 70, seed: 12, ...w }),
+      front: hairShadow(innerL.slice(0, 5), 1.2) + hairShadow(mirrorPts(innerL).slice(0, 5), -1.2) +
+            strandSheet(innerL, outerL, { n: 150, seed: 21, ...w }) +
+            strandSheet(mirrorPts(innerL), mirrorPts(outerL), { n: 150, seed: 22, ...w })
+    };
+  }
+  if (style === 'bob') {
+    const inL = [[95, 14], [91, 17], [87.6, 26], [86.6, 40], [87.2, 52], [88.6, 60]];
+    const outL = [[95, 12.8], [86, 11], [80.5, 22], [79, 40], [79.2, 53], [81.5, 61.5]];
+    const inR = [[95.5, 14.5], [104, 16], [111.6, 25], [113.6, 40], [113, 52], [111.4, 60]];
+    const outR = [[95.5, 12.8], [108, 10], [119, 21], [121, 40], [120.8, 53], [118.5, 61.5]];
+    const backIn = [[100, 18], [99, 40], [99, 62]];
+    const backOut = [[100, 14], [80, 30], [81, 63]];
+    return {
+      back: strandSheet(backIn, backOut, { n: 50, seed: 31 }) +
+            strandSheet(mirrorPts(backIn), mirrorPts(backOut), { n: 50, seed: 32 }),
+      front: hairShadow(inL.slice(0, 4), 1) + hairShadow(inR.slice(0, 4), -1) +
+            strandSheet(inL, outL, { n: 110, seed: 41, jitter: .3 }) +
+            strandSheet(inR, outR, { n: 140, seed: 42, jitter: .3 })
+    };
+  }
+  // high ponytail: hair swept up from the hairline to a crown elastic
+  const r = rng(51);
+  const hairline = densify([[100, 17.6], [93.5, 18.4], [89, 22.4], [86.8, 29], [86.3, 37]], 60);
+  let cap = `<path d="M85.6 38 C84 20 91 9.5 100 9.5 C109 9.5 116 20 114.4 38 C113 28 109 19.5 100 18.5 C91 19.5 87 28 85.6 38 Z" fill="url(#hairDeep)"/>`;
+  let strands = '';
+  for (let side of [-1, 1]) {
+    for (let i = 0; i < 140; i++) {
+      const h = hairline[Math.floor(r() * hairline.length)];
+      const hx = side < 0 ? h[0] : 200 - h[0];
+      const crown = [100 + (r() - .5) * 3, 8.5 + r() * .8];
+      const mid = [100 + (hx - 100) * 1.16, h[1] * .42 + crown[1] * .58 - 1.5];
+      const d = smooth([[hx, h[1]], mid, crown]);
+      const roll = r();
+      const stroke = roll < .25 ? 'url(#hairDeep)' : roll < .85 ? 'url(#hairGrad)' : '#fffbea';
+      strands += `<path d="${d}" stroke="${stroke}" stroke-width="${f(.3 + r() * .5)}" fill="none" opacity="${f(.65 + r() * .35)}"/>`;
+    }
+  }
+  const tailIn = [[100, 8], [104, 3], [110, 3.5], [115, 13], [117, 30], [116, 56], [113, 86], [111, 118]];
+  const tailOut = [[100, 8], [106, 1.5], [115, 2.5], [121.5, 13], [124, 32], [124, 58], [120.5, 88], [114.5, 121]];
+  return {
+    back: strandSheet(tailIn, tailOut, { n: 170, seed: 61, wave: 1.4, waveStart: 30, freq: .16, taper: .4 }),
+    front: hairShadow([[100, 18], [93, 19], [89, 23], [87, 30]], 1) + hairShadow(mirrorPts([[100, 18], [93, 19], [89, 23], [87, 30]]), -1) +
+      cap + strands +
+      `<ellipse cx="100" cy="8.4" rx="4.4" ry="2.4" fill="#b0124f"/>
+       <ellipse cx="100" cy="7.8" rx="3.6" ry="1.3" fill="#e8417f" opacity=".8"/>
+       <path d="M96.5 8.4 Q100 10.4 103.5 8.4" stroke="#6d0a31" stroke-width=".4" fill="none"/>`
+  };
+}
+const HAIR_CACHE = {};
+
+/* =========================================================
+   BODY (static) — head, torso, arms, legs
+   ========================================================= */
+function buildHead() {
+  const face = 'M100 15 C110 15 115.5 23 115.5 34 C115.5 43.5 111.5 50.5 105.5 55 C102.6 57.2 97.4 57.2 94.5 55 C88.5 50.5 84.5 43.5 84.5 34 C84.5 23 90 15 100 15 Z';
+  const contour = `
+    <ellipse cx="86.5" cy="42" rx="3" ry="7" fill="#a8664b" opacity=".3" filter="url(#b2)"/>
+    <ellipse cx="113.5" cy="42" rx="3" ry="7" fill="#a8664b" opacity=".3" filter="url(#b2)"/>
+    <ellipse cx="100" cy="23" rx="8" ry="4" fill="#fff3ea" opacity=".35" filter="url(#b2)"/>
+    <ellipse cx="91.5" cy="41" rx="3.4" ry="2.2" fill="#e88a8e" opacity=".45" filter="url(#b1)"/>
+    <ellipse cx="108.5" cy="41" rx="3.4" ry="2.2" fill="#e88a8e" opacity=".45" filter="url(#b1)"/>
+    <ellipse cx="100" cy="54.5" rx="5" ry="1.6" fill="#fff0e6" opacity=".35" filter="url(#b05)"/>`;
+  const eye = (cx, s) => `
+    <ellipse cx="${cx}" cy="31.6" rx="4" ry="1.8" fill="#b06e7a" opacity=".45" filter="url(#b05)"/>
+    <path d="M${cx - 3.3 * s} 34.1 Q${cx - .3 * s} 31.5 ${cx + 3.1 * s} 33.6 Q${cx} 35.7 ${cx - 3.3 * s} 34.1 Z" fill="#fbf6f2"/>
+    <clipPath id="eye${s}"><path d="M${cx - 3.3 * s} 34.1 Q${cx - .3 * s} 31.5 ${cx + 3.1 * s} 33.6 Q${cx} 35.7 ${cx - 3.3 * s} 34.1 Z"/></clipPath>
+    <g clip-path="url(#eye${s})">
+      <circle cx="${cx}" cy="33.7" r="1.45" fill="url(#iris)"/>
+      <circle cx="${cx}" cy="33.7" r=".62" fill="#0b0a10"/>
+      <rect x="${cx - 4}" y="31" width="8" height="1.6" fill="#7a4a3a" opacity=".35" filter="url(#b05)"/>
+    </g>
+    <circle cx="${cx + .45}" cy="33.2" r=".32" fill="#fff"/>
+    <path d="M${cx - 3.4 * s} 34.1 Q${cx - .3 * s} 31.3 ${cx + 3.2 * s} 33.5 L${cx + 4.3 * s} 32.6" stroke="#1a0f0d" stroke-width=".55" fill="none" stroke-linecap="round"/>
+    <path d="M${cx - 2.5 * s} 33.2 l${-.4 * s} -1.1 M${cx - 1.3 * s} 32.6 l${-.2 * s} -1.2 M${cx} 32.3 l0 -1.25 M${cx + 1.3 * s} 32.4 l${.3 * s} -1.2 M${cx + 2.5 * s} 32.9 l${.6 * s} -1.05" stroke="#1a0f0d" stroke-width=".28" stroke-linecap="round"/>
+    <path d="M${cx - 3.2 * s} 31.4 Q${cx} 29.9 ${cx + 3.2 * s} 31.6" stroke="#9c6450" stroke-width=".3" fill="none" opacity=".6"/>
+    <path d="M${cx - 2.6 * s} 34.9 Q${cx} 35.6 ${cx + 2.6 * s} 34.5" stroke="#b27c68" stroke-width=".25" fill="none" opacity=".6"/>
+    <path d="M${cx - 3.8 * s} 29.2 Q${cx - .5 * s} 27.2 ${cx + 3.6 * s} 28.6 Q${cx} 28.2 ${cx - 3.8 * s} 29.6 Z" fill="#8f6533"/>`;
+  return `
+    <clipPath id="faceClip"><path d="${face}"/></clipPath>
+    <ellipse cx="84.8" cy="36.5" rx="1.8" ry="3.6" fill="#e2a98c"/>
+    <ellipse cx="115.2" cy="36.5" rx="1.8" ry="3.6" fill="#e2a98c"/>
+    <circle cx="84.7" cy="40.6" r=".9" fill="#ffe0ef" stroke="#e8417f" stroke-width=".3"/>
+    <circle cx="115.3" cy="40.6" r=".9" fill="#ffe0ef" stroke="#e8417f" stroke-width=".3"/>
+    <path d="${face}" fill="url(#skinFace)"/>
+    <g clip-path="url(#faceClip)">${contour}</g>
+    ${eye(94, 1)}${eye(106, -1)}
+    <path d="M99 37.5 C98.7 39.5 98.3 41.2 98.5 42.4" stroke="#b07258" stroke-width=".8" fill="none" opacity=".2" filter="url(#b05)"/>
+    <path d="M100.2 37 L100.4 41.2" stroke="#fff4ec" stroke-width=".7" opacity=".45" filter="url(#b05)"/>
+    <path d="M97.6 43 Q98.4 44.2 100 43.9 Q101.6 44.2 102.4 43" stroke="#9d5c48" stroke-width=".45" fill="none" opacity=".75"/>
+    <ellipse cx="98.6" cy="43.4" rx=".6" ry=".3" fill="#6d3a2c" opacity=".7"/>
+    <ellipse cx="101.4" cy="43.4" rx=".6" ry=".3" fill="#6d3a2c" opacity=".7"/>
+    <path d="M95.8 48 Q97.8 46.7 100 47.4 Q102.2 46.7 104.2 48 Q102.3 48.6 100 48.5 Q97.7 48.6 95.8 48 Z" fill="url(#lips)"/>
+    <path d="M96 48.1 Q100 51.6 104 48.1 Q100 48.9 96 48.1 Z" fill="url(#lips)"/>
+    <path d="M95.6 48.1 Q100 48.9 104.4 48.1" stroke="#6e1530" stroke-width=".35" fill="none"/>
+    <ellipse cx="100.6" cy="49.6" rx="1.6" ry=".45" fill="#fff" opacity=".5" filter="url(#b05)"/>
+    <ellipse cx="100" cy="52.8" rx="2.4" ry=".9" fill="#a8664b" opacity=".3" filter="url(#b05)"/>`;
+}
+
+function buildTorso() {
+  const neck = 'M94 47 C94.6 54 94.2 61 92.4 67 L107.6 67 C105.8 61 105.4 54 106 47 Z';
+  const torso = 'M93.5 65 C90 70 84 71.5 78 73.5 C74.5 74.8 73 78 73.5 82 C74.5 86 77.5 89 79 92 C78.5 102 82 116 87 128 C84.5 138 81.5 148 80 160 L120 160 C118.5 148 115.5 138 113 128 C118 116 121.5 102 121 92 C122.5 89 125.5 86 126.5 82 C127 78 125.5 74.8 122 73.5 C116 71.5 110 70 106.5 65 Z';
+  return clipped(neck, `
+      <ellipse cx="100" cy="56" rx="7" ry="4.5" fill="#7a3f2b" opacity=".55" filter="url(#b1)"/>
+      <path d="M96 58 L96.5 66" stroke="#b97a5d" stroke-width="1" opacity=".4" filter="url(#b05)"/>`, 'url(#skinH)') +
+    clipped(torso, `
+      <path d="M81 76 Q90 79 97.5 74.8" stroke="#a8664b" stroke-width="1.1" fill="none" opacity=".45" filter="url(#b05)"/>
+      <path d="M119 76 Q110 79 102.5 74.8" stroke="#a8664b" stroke-width="1.1" fill="none" opacity=".45" filter="url(#b05)"/>
+      <path d="M81 75 Q90 78 97.5 73.8" stroke="#fff1e6" stroke-width=".7" fill="none" opacity=".55" filter="url(#b05)"/>
+      <path d="M119 75 Q110 78 102.5 73.8" stroke="#fff1e6" stroke-width=".7" fill="none" opacity=".55" filter="url(#b05)"/>
+      <ellipse cx="100" cy="72" rx="6" ry="3" fill="#b06e52" opacity=".35" filter="url(#b1)"/>
+      <path d="M100 116 L100 128" stroke="#b97a5d" stroke-width="1.4" opacity=".3" filter="url(#b1)"/>
+      <ellipse cx="94" cy="122" rx="2.6" ry="6" fill="#fff0e4" opacity=".25" filter="url(#b1)"/>
+      <ellipse cx="106" cy="122" rx="2.6" ry="6" fill="#fff0e4" opacity=".2" filter="url(#b1)"/>
+      <ellipse cx="100" cy="125.6" rx=".7" ry="1.2" fill="#8a4b37" opacity=".75"/>
+      <rect x="70" y="113" width="60" height="7" fill="url(#shadeDown)" filter="url(#b1)"/>`, 'url(#skinTorso)');
+}
+
+function buildArms() {
+  const arm = (S, E, W) => [limb(S, E, 10.5, 7), limb(E, W, 7, 5.2)];
+    const L = { S: [77.5, 80], E: [65, 114], W: [82.5, 139] };
+  const R = { S: [122.5, 80], E: [129, 121], W: [131.5, 163] };
+  const shading = (P, s) => `
+    <path d="M${P.S[0] - 6 * s} ${P.S[1]} L${P.E[0] - 3.5 * s} ${P.E[1]} L${P.W[0] - 2.5 * s} ${P.W[1]}" stroke="#8f553e" stroke-width="2.2" fill="none" opacity=".45" filter="url(#b1)"/>
+    <path d="M${P.S[0] + .8 * s} ${P.S[1] + 4} L${P.E[0] + .8 * s} ${P.E[1]} L${P.W[0] + .5 * s} ${P.W[1]}" stroke="#fff0e4" stroke-width="1.4" fill="none" opacity=".4" filter="url(#b05)"/>
+    <circle cx="${P.E[0]}" cy="${P.E[1]}" r="1.2" fill="#a7654b" opacity=".18" filter="url(#b05)"/>`;
+  const armShape = P => [...arm(P.S, P.E, P.W), `M${P.E[0] + 3.6} ${P.E[1]} A3.6 3.6 0 1 1 ${P.E[0] - 3.6} ${P.E[1]} A3.6 3.6 0 1 1 ${P.E[0] + 3.6} ${P.E[1]} Z`,
+    `M${P.S[0] + 5.2} ${P.S[1]} A5.2 5.2 0 1 1 ${P.S[0] - 5.2} ${P.S[1]} A5.2 5.2 0 1 1 ${P.S[0] + 5.2} ${P.S[1]} Z`];
+  const handL = `
+    <path d="M80.6 136 C84 134.8 88 136.6 90.2 139.3 C91.8 141.4 91.3 144 89.6 145.1 C88 146.1 85.8 145.6 84.3 144 C82.3 142 80.2 139.4 80.6 136 Z" fill="url(#skinH)"/>
+    <path d="M85.6 140.4 L89.4 143.2 M84.8 141.8 L88.3 144.7 M86.6 139.2 L90 141.6" stroke="#a7654b" stroke-width=".35" opacity=".7"/>
+    <path d="M89.6 143.4 Q90.5 143.8 90.4 144.6 M88.4 144.9 Q89.2 145.4 89 146" stroke="#e8417f" stroke-width=".6" stroke-linecap="round"/>`;
+  const handR = `
+    <path d="M129 161.6 C131.5 160.2 134.5 161.4 135 165 C135.6 169 135.2 174 133.6 177.6 C132.6 179.2 131 178.6 130.5 176.6 L130 172 C129 170 128.5 166 129 161.6 Z" fill="url(#skinH)"/>
+    <path d="M129.3 165 C128 167 128.1 170 129.4 171.5" stroke="#a7654b" stroke-width=".45" fill="none" opacity=".7"/>
+    <path d="M131.6 170 L131.8 176.5 M133.4 169.5 L133.4 176" stroke="#a7654b" stroke-width=".3" opacity=".6"/>
+    <path d="M131.4 177 Q131.9 178.4 132.6 177.6" stroke="#e8417f" stroke-width=".7" fill="none"/>`;
+  return {
+    L: clipped(armShape(L), shading(L, -1), '#ecbb9b') + handL,
+    R: clipped(armShape(R), shading(R, 1), '#ecbb9b') + handR
+  };
+}
+
+const LEG_L = 'M79.5 157 C78.5 190 83.5 225 86.2 252 C84.8 268 85.4 292 88.6 318 L89.8 337 L96.2 337 L96.8 318 C99.4 294 99.8 272 97 252 C99 225 100.8 192 100.8 166 Z';
+function buildLeg(side) {
+  const d = side < 0 ? LEG_L : mirror(LEG_L);
+  const m = s => side < 0 ? s : mirror(s);
+  return clipped(d, `
+    <path d="${m('M80 160 C79 192 84 226 87 252 C86 272 87 294 89.5 320 L90 340')}" stroke="#8f553e" stroke-width="3.5" fill="none" opacity=".45" filter="url(#b1)"/>
+    <path d="${m('M100.5 166 C100 195 98.5 225 96.5 252 C99 272 98.5 294 96.5 320')}" stroke="#9a5d45" stroke-width="2.5" fill="none" opacity=".35" filter="url(#b1)"/>
+    <path d="${m('M89 170 C89 200 90.5 228 91.5 250 M91 262 C91 284 92 306 93 330')}" stroke="#fff1e6" stroke-width="1.8" fill="none" opacity=".45" filter="url(#b1)"/>
+    <ellipse cx="${side < 0 ? 91.5 : 108.5}" cy="251" rx="3" ry="3" fill="#fff3ea" opacity=".18" filter="url(#b1)"/>
+    <path d="${m('M88.5 257 Q92 259.5 96 256.5')}" stroke="#a7654b" stroke-width=".6" fill="none" opacity=".15" filter="url(#b1)"/>
+    <rect x="60" y="190" width="80" height="16" fill="url(#shadeDown)" filter="url(#b1)"/>`, 'url(#skinH)');
+}
+
+/* =========================================================
+   TOPS
+   ========================================================= */
+function sparkle(x, y, s, delay) {
+  return `<g opacity="0"><path d="M${x} ${y - s} L${x + s * .18} ${y - s * .18} L${x + s} ${y} L${x + s * .18} ${y + s * .18}
+    L${x} ${y + s} L${x - s * .18} ${y + s * .18} L${x - s} ${y} L${x - s * .18} ${y - s * .18} Z" fill="#fff"/>
+    <animate attributeName="opacity" values="0;1;0" dur="1.6s" begin="${delay}s" repeatCount="indefinite"/></g>`;
+}
+const UNDERBUST = `
+  <path d="M82 100 Q90 107 98 101" stroke="#000" stroke-width="1.6" fill="none" opacity=".28" filter="url(#b1)"/>
+  <path d="M102 101 Q110 107 118 100" stroke="#000" stroke-width="1.6" fill="none" opacity=".28" filter="url(#b1)"/>
+  <ellipse cx="90" cy="94" rx="5" ry="3.5" fill="#fff" opacity=".12" filter="url(#b1)"/>
+  <ellipse cx="110" cy="94" rx="5" ry="3.5" fill="#fff" opacity=".1" filter="url(#b1)"/>`;
+const HEM_SHADOW = () => '';  // the torso already carries a soft shadow under every crop-top hem
 
 const TOPS = {
-  pinkGlitter: `
-    <path d="${TOP_SHAPE}" fill="url(#pGlitter)" stroke="#d1006b" stroke-width="1"/>
-    <path d="M82 148 L118 148" stroke="#ff9ad0" stroke-width="3"/>
-    ${sparkle(88, 125, 3.5, 0)}${sparkle(112, 132, 3, .45)}${sparkle(101, 141, 2.6, .9)}
-    <path d="M100 121 L95 117 L95 125 Z M100 121 L105 117 L105 125 Z" fill="#fff" stroke="#ffb3d9" stroke-width=".6"/>
-    <circle cx="100" cy="121" r="1.6" fill="#ffd6ec"/>`,
-  whiteTee: `
-    <polygon points="71.7,112.2 82.3,117.8 76.7,128.4 66.1,122.8" fill="url(#pRib)" stroke="#d8cfdc" stroke-width="1"/>
-    <polygon points="118,110.7 128,117.3 134.6,107.3 124.6,100.7" fill="url(#pRib)" stroke="#d8cfdc" stroke-width="1"/>
-    <path d="${TOP_SHAPE}" fill="url(#pRib)" stroke="#d8cfdc" stroke-width="1"/>
-    <path d="M91 107 Q100 120 109 107" fill="none" stroke="#e7dde9" stroke-width="2.4"/>
-    <path d="M82 149 L118 149" stroke="#eee6f0" stroke-width="3"/>
-    <path d="M96 132 C94 129 98 127 100 130 C102 127 106 129 104 132 L100 136 Z" fill="#ff7cbc"/>`,
-  neonGreen: `
-    <path d="${TOP_SHAPE}" fill="url(#gNeon)" stroke="#16b84a" stroke-width="1"/>
-    <path d="M91 107 Q100 120 109 107" fill="none" stroke="#16b84a" stroke-width="2"/>
-    <path d="M82 147 L118 147" stroke="#16b84a" stroke-width="4"/>
-    <path d="M86 128 L114 128" stroke="#fff" stroke-width="1.2" stroke-dasharray="2 2" opacity=".8"/>
-    <text x="100" y="140" text-anchor="middle" font-size="8" font-weight="800" fill="#0d6b2c" font-family="Poppins, sans-serif">★ ★ ★</text>`
+  pinkGlitter: () => {
+    const body = 'M79 89 C86 85 94 87 100 92 C106 87 114 85 121 89 C122.5 99 120.5 108 117.5 115 C110 117 90 117 82.5 115 C79.5 108 77.5 99 79 89 Z';
+    let tw = '';
+    const r = rng(7);
+    for (let i = 0; i < 9; i++) tw += sparkle(f(84 + r() * 32), f(92 + r() * 21), f(1.4 + r() * 1.6), f(r() * 1.6));
+    return HEM_SHADOW(115) + `
+      <path d="M86 88 L87.5 72 M114 88 L112.5 72" stroke="#7d0c3a" stroke-width=".9"/>
+      <path d="M86 88 L87.5 72 M114 88 L112.5 72" stroke="#ff9ac6" stroke-width=".35"/>` +
+      clipped(body, `<path d="${body}" fill="url(#volH)"/>${UNDERBUST}<path d="${body}" fill="url(#sheen)"/>
+        <path d="M100 92 L100 116" stroke="#000" stroke-width="1" opacity=".18" filter="url(#b05)"/>`, 'url(#pSequin)') +
+      `<path d="${body}" fill="none" stroke="#5a0829" stroke-width=".4"/>` + tw;
+  },
+  whiteTee: () => {
+    const body = 'M78 76 C84 74 89 72 92 70 Q100 78 108 70 C111 72 116 74 122 76 C125.5 78 125.5 84 121 92 C122 100 120 108 117.5 115.5 C110 117.5 90 117.5 82.5 115.5 C80 108 78 100 79 92 C74.5 84 74.5 78 78 76 Z';
+    const sleeveL = 'M79 72.6 C73 73.4 69.6 78.5 68.8 85.5 L68.4 93 L78.5 95.5 L80.4 88 C80.4 81 80.6 76 79 72.6 Z';
+    return HEM_SHADOW(115.5) +
+      clipped(sleeveL, `<path d="${sleeveL}" fill="url(#volH)"/><path d="M68 91 L79 94" stroke="#cfc8bf" stroke-width="2"/>`, 'url(#pRib)') +
+      clipped(mirror(sleeveL), `<path d="${mirror(sleeveL)}" fill="url(#volH)"/><path d="M132 91 L121 94" stroke="#cfc8bf" stroke-width="2"/>`, 'url(#pRib)') +
+      clipped(body, `<path d="${body}" fill="url(#volH)"/>${UNDERBUST}
+        <path d="M83 104 Q88 110 85 114 M117 104 Q112 110 115 114" stroke="#8a8278" stroke-width="1" fill="none" opacity=".35" filter="url(#b05)"/>
+        <path d="M80 113.5 L120 113.5" stroke="#d8d1c8" stroke-width="2.2"/>`, 'url(#pRib)') +
+      `<path d="M92 70 Q100 78 108 70" stroke="#d8d1c8" stroke-width="1.6" fill="none"/>
+       <path d="M92.4 71.2 Q100 79 107.6 71.2" stroke="#fff" stroke-width=".4" fill="none"/>`;
+  },
+  neonGreen: () => {
+    const body = 'M93 63.5 Q100 66.5 107 63.5 C110.5 68 116 71 120 74 C123.5 77 123 82 120.5 91 C121.5 99 120 106 118 111 C110 113 90 113 82 111 C80 106 78.5 99 79.5 91 C77 82 76.5 77 80 74 C84 71 89.5 68 93 63.5 Z';
+    return HEM_SHADOW(111) +
+      clipped(body, `<path d="${body}" fill="url(#volH)"/>${UNDERBUST}
+        <path d="M85 74 C88 84 89 95 88 111 M115 74 C112 84 111 95 112 111" stroke="#2c8f12" stroke-width=".5" fill="none" opacity=".7"/>
+        <path d="M85.4 74 C88.4 84 89.4 95 88.4 111 M115.4 74 C112.4 84 111.4 95 112.4 111" stroke="#e9ffc2" stroke-width=".3" fill="none" opacity=".6"/>
+        <path d="M80 109.5 L120 109.5" stroke="#3fae1d" stroke-width="2.4"/>
+        <text x="100" y="104.5" text-anchor="middle" font-size="3.2" letter-spacing=".8" font-weight="700" fill="#1d5c0b" font-family="Poppins, sans-serif" opacity=".85">GLAM</text>`, 'url(#gNeon)') +
+      `<path d="M93 63.5 Q100 66.5 107 63.5 L107.4 66.6 Q100 69.6 92.6 66.6 Z" fill="#7fe02b"/>
+       <path d="${body}" fill="none" stroke="#2f9a14" stroke-width=".35"/>`;
+  }
 };
+// apply knit texture to the neon top & tee
+['neonGreen', 'whiteTee'].forEach(k => {
+  const fn = TOPS[k];
+  TOPS[k] = () => `<g filter="url(#fabric)">${fn()}</g>`;
+});
 
 /* =========================================================
-   SVG DRAWING — PLEATED SKIRTS
+   PLEATED SKIRTS
    ========================================================= */
-function pleatedSkirt(fill, stroke, bandFill, extras = '') {
-  const n = 8;
+function pleatedSkirt(fill, edge, band, extras = '', texture = false) {
+  const n = 14;
   const waist = [], hem = [];
   for (let i = 0; i <= n; i++) {
-    waist.push([86 + i * (28 / n), 166]);
-    hem.push([66 + i * (68 / n), i % 2 === 0 ? 223 : 219]);
+    const u = i / n;
+    const wx = 86.5 + u * 27;
+    waist.push([wx, 130 + 1.2 * Math.sin(u * Math.PI)]);
+    const hx = 63 + u * 74;
+    const curve = 3.2 * Math.sin(u * Math.PI);
+    hem.push([hx, 194 + curve + (i % 2 ? -.8 : 0)]);
   }
-  let d = `M${waist[0][0]} ${waist[0][1]} L${waist[n][0]} ${waist[n][1]}`;
-  for (let i = n; i >= 0; i--) d += ` L${hem[i][0]} ${hem[i][1]}`;
-  d += ' Z';
+  let outline = `M${f(waist[0][0])} ${f(waist[0][1])}`;
+  waist.slice(1).forEach(p => outline += ` L${f(p[0])} ${f(p[1])}`);
+  for (let i = n; i >= 0; i--) outline += ` L${f(hem[i][0])} ${f(hem[i][1])}`;
+  outline += ' Z';
   let panels = '';
-  let lines = '';
   for (let i = 0; i < n; i++) {
-    if (i % 2 === 1) {
-      panels += `<polygon points="${waist[i]} ${waist[i + 1]} ${hem[i + 1]} ${hem[i]}" fill="rgba(0,0,0,.12)"/>`;
-    }
-    if (i > 0) lines += `<line x1="${waist[i][0]}" y1="${waist[i][1]}" x2="${hem[i][0]}" y2="${hem[i][1]}" stroke="${stroke}" stroke-width=".7" opacity=".7"/>`;
+    const pts = `${f(waist[i][0])},${f(waist[i][1])} ${f(waist[i + 1][0])},${f(waist[i + 1][1])} ${f(hem[i + 1][0])},${f(hem[i + 1][1])} ${f(hem[i][0])},${f(hem[i][1])}`;
+    panels += `<polygon points="${pts}" fill="url(#pleatG)"/>`;
+    panels += `<line x1="${f(waist[i + 1][0])}" y1="${f(waist[i + 1][1])}" x2="${f(hem[i + 1][0])}" y2="${f(hem[i + 1][1])}" stroke="${edge}" stroke-width=".35" opacity=".8"/>`;
   }
-  return `
-    <path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="1" stroke-linejoin="round"/>
-    ${panels}${lines}
-    <rect x="85" y="161" width="30" height="7" rx="2" fill="${bandFill}" stroke="${stroke}" stroke-width=".8"/>
-    ${extras}`;
+  const bandPath = 'M86 125.6 Q100 127.4 114 125.6 L114.4 131.6 Q100 133.4 85.6 131.6 Z';
+  const skirt = clipped(outline, `${panels}<path d="${outline}" fill="url(#volH)"/>
+      <ellipse cx="100" cy="138" rx="16" ry="5" fill="#000" opacity=".22" filter="url(#b2)"/>`, fill) +
+    `<path d="${outline}" fill="none" stroke="${edge}" stroke-width=".4"/>` +
+    clipped(bandPath, `<path d="${bandPath}" fill="url(#volH)"/>`, band) + extras;
+  return texture ? `<g filter="url(#fabric)">${skirt}</g>` : skirt;
 }
-
 const SKIRTS = {
-  plaid: () => pleatedSkirt('url(#pPlaid)', '#7a1328', '#1f2a5c',
-    `<rect x="108" y="170" width="3" height="12" rx="1" fill="#ffd54a" stroke="#b08a1a" stroke-width=".4"/>`),
-  pastelPink: () => pleatedSkirt('url(#gPastel)', '#ff8cc0', '#ff9ccb',
-    `<path d="M100 164.5 L94 161 L94 168 Z M100 164.5 L106 161 L106 168 Z" fill="#fff" stroke="#ff8cc0" stroke-width=".6"/>
-     <circle cx="100" cy="164.5" r="1.5" fill="#ff8cc0"/>`),
-  denim: () => pleatedSkirt('url(#pDenim)', '#2e548c', '#3d6aa8',
-    `<circle cx="100" cy="164.5" r="2" fill="#d8b04a" stroke="#8a6a12" stroke-width=".5"/>
-     <path d="M86 168.5 L114 168.5" stroke="#f0b04a" stroke-width=".7" stroke-dasharray="1.5 1.2"/>
-     <path d="M70 214 L130 214" stroke="#f0b04a" stroke-width=".7" stroke-dasharray="1.5 1.2"/>`)
+  plaid: () => pleatedSkirt('url(#pPlaid)', '#3a0a12', '#14203f',
+    `<rect x="107" y="134" width="2.4" height="9" rx=".6" fill="#d8b24a" stroke="#7a5a12" stroke-width=".3"/>
+     <circle cx="108.2" cy="135.5" r=".6" fill="#fff6c8"/>`, true),
+  pastelPink: () => pleatedSkirt('url(#gPastel)', '#d98aa9', '#efa9c3',
+    `<path d="M100 128.6 L95.2 126.2 L95.4 131.2 Z M100 128.6 L104.8 126.2 L104.6 131.2 Z" fill="#fbe1eb" stroke="#d98aa9" stroke-width=".3"/>
+     <ellipse cx="100" cy="128.6" rx="1.2" ry="1.4" fill="#e7a0bb"/>`),
+  denim: () => pleatedSkirt('url(#pDenim)', '#1f3556', '#365a8c',
+    `<circle cx="100" cy="128.6" r="1.3" fill="#c9a24a" stroke="#6f5413" stroke-width=".35"/>
+     <path d="M86 126.4 Q100 128.2 114 126.4 M85.8 131 Q100 132.8 114.2 131" stroke="#e0a24a" stroke-width=".3" stroke-dasharray="1 .7" fill="none"/>
+     <path d="M65.5 190.5 Q100 197 134.5 190.5" stroke="#e0a24a" stroke-width=".3" stroke-dasharray="1 .7" fill="none"/>
+     <rect x="91" y="125.2" width="1.6" height="7" fill="#365a8c" stroke="#e0a24a" stroke-width=".2"/>
+     <rect x="107.4" y="125.2" width="1.6" height="7" fill="#365a8c" stroke="#e0a24a" stroke-width=".2"/>`, true)
 };
 
 /* =========================================================
-   SVG DRAWING — SHOES (cx = foot center, side = -1 left / 1 right)
+   SHOES (drawn for the left foot, mirrored for the right)
    ========================================================= */
 const SHOES = {
-  sneakers: (cx, side) => `
-    <rect x="${cx - 6}" y="324" width="12" height="6" rx="2" fill="#fff" stroke="#e3dbe6" stroke-width=".6"/>
-    <path d="M${cx - 6} 326.5 L${cx + 6} 326.5" stroke="#ff8cc6" stroke-width="1.2"/>
-    <path d="M${cx - 7} 329 Q${cx - 10} 344 ${cx - 9} 346 L${cx + 9} 346 Q${cx + 10} 344 ${cx + 7} 329 Z" fill="#fff" stroke="#d9d0dc" stroke-width="1"/>
-    <rect x="${cx - 10.5}" y="343" width="21" height="5" rx="2.5" fill="#ff8cc6" stroke="#e86aa8" stroke-width=".6"/>
-    <path d="M${cx - 4} 333 L${cx + 4} 333 M${cx - 4.5} 336.5 L${cx + 4.5} 336.5 M${cx - 5} 340 L${cx + 5} 340" stroke="#ffb3d9" stroke-width="1.2" stroke-linecap="round"/>
-    <path d="M${cx + side * 3} 342 Q${cx + side * 7} 340 ${cx + side * 8.5} 335" stroke="#ff4fa3" stroke-width="1.4" fill="none" stroke-linecap="round"/>`,
-  heels: (cx, side) => `
-    <rect x="${cx + side * 5.5 - 1.3}" y="333" width="2.6" height="16" rx="1" fill="#c4006a"/>
-    <path d="M${cx - 6.5} 330 Q${cx - 9} 341 ${cx} 352 Q${cx + 9} 341 ${cx + 6.5} 330 Q${cx} 335 ${cx - 6.5} 330 Z" fill="#ff2d95" stroke="#c4006a" stroke-width="1"/>
-    <path d="M${cx - 6.5} 328 L${cx + 6.5} 328" stroke="#ff2d95" stroke-width="2" stroke-linecap="round"/>
-    <path d="M${cx - 3} 337 Q${cx - 4} 343 ${cx - 1} 347" stroke="#fff" stroke-width="1.1" fill="none" opacity=".7" stroke-linecap="round"/>
-    <path d="M${cx} 333 L${cx - 3.5} 331 L${cx - 3.5} 335 Z M${cx} 333 L${cx + 3.5} 331 L${cx + 3.5} 335 Z" fill="#ffd6ec"/>
-    <circle cx="${cx}" cy="333" r="1.1" fill="#fff"/>`,
-  boots: (cx, side) => {
+  heels: () => `
+    <path d="M92.6 340 L91.4 352.6" stroke="#5c0628" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M90.4 335.5 C89.6 339 89.5 341.5 90 343 L96.4 343 C96.8 341.5 96.6 339 95.8 335.5 Z" fill="url(#skinH)"/>
+    <path d="M89.6 341 C88.8 345 89.8 349.8 93.2 353 C96.6 349.8 97.6 345 96.8 341 Q93.2 343.6 89.6 341 Z" fill="url(#gloss)"/>
+    <path d="M90.6 343.4 C90.4 346.5 91.4 349.4 93.2 351.2" stroke="#fff" stroke-width=".55" fill="none" opacity=".75" stroke-linecap="round"/>
+    <path d="M89.6 341 Q93.2 343.6 96.8 341" stroke="#ff9cc8" stroke-width=".4" fill="none"/>
+    <path d="M90.2 336.6 Q93.2 338 96.2 336.6" stroke="#d4146a" stroke-width=".9" fill="none"/>`,
+  sneakers: () => `
+    <path d="M90.2 330 L96.4 330 L96.4 335 L90.2 335 Z" fill="#f4f1f4"/>
+    <path d="M90.2 331.2 L96.4 331.2" stroke="#e8417f" stroke-width=".6"/>
+    <path d="M89.6 334 C88 338 87.2 345 87.6 348.6 L98.8 348.6 C99.2 345 98.4 338 96.8 334 Z" fill="url(#white3d)" stroke="#b5afb8" stroke-width=".3"/>
+    <path d="M90.6 337 L95.8 337 M90.2 339.5 L96.2 339.5 M89.9 342 L96.5 342" stroke="#dcd6dc" stroke-width=".9" stroke-linecap="round"/>
+    <path d="M90.6 337 L95.8 339.5 M95.8 337 L90.6 339.5 M90.2 339.5 L96.2 342 M96.2 339.5 L90.2 342" stroke="#fff" stroke-width=".35"/>
+    <path d="M88.4 345 Q92 343.4 96.6 341.6" stroke="#e8417f" stroke-width=".9" fill="none" stroke-linecap="round"/>
+    <path d="M87.2 348 L99.2 348 L99.4 351.4 Q93.2 352.6 87 351.4 Z" fill="#f7f4ef" stroke="#c9c2bc" stroke-width=".3"/>
+    <path d="M87.2 349.8 L99.3 349.8" stroke="#d6cfc8" stroke-width=".3"/>`,
+  boots: () => {
     let fur = '';
-    for (let k = -8; k <= 8; k += 4) fur += `<circle cx="${cx + k}" cy="289" r="3.4" fill="#fff" stroke="#f0dde8" stroke-width=".6"/>`;
-    return `
-    <path d="M${cx - 8} 289 L${cx + 8} 289 L${cx + 7.5} 336 Q${cx + 11} 347 ${cx + 3} 349 L${cx - 6} 349 Q${cx - 11} 347 ${cx - 7.5} 336 Z" fill="#f7a8c8" stroke="#d45f92" stroke-width="1"/>
-    <rect x="${cx - 6}" y="348" width="12" height="3.5" rx="1" fill="#b84a7a"/>
-    <path d="M${cx - 2.5} 312 C${cx - 5} 309 ${cx - 2} 306 ${cx} 309 C${cx + 2} 306 ${cx + 5} 309 ${cx + 2.5} 312 L${cx} 315 Z" fill="#fff"/>
-    <path d="M${cx + side * 4} 296 L${cx + side * 4} 330" stroke="#ffd3e6" stroke-width="1.1" stroke-dasharray="2 2"/>
-    ${fur}`;
+    const r = rng(77);
+    for (let i = 0; i < 40; i++) {
+      const x = 86 + r() * 14.5, y = 287 + r() * 4;
+      fur += `<path d="M${f(x)} ${f(y)} q${f((r() - .5) * 2)} ${f(-1 - r() * 2)} ${f((r() - .5) * 2.4)} ${f(-1.5 - r() * 2)}" stroke="${r() < .5 ? '#fff' : '#efe6ea'}" stroke-width=".7" fill="none" stroke-linecap="round"/>`;
+    }
+    const boot = 'M87 289 L99.6 289 C99.6 300 98.2 312 97.4 320 L97.2 338 C98.4 343 98.6 348 97 351.4 L89.4 351.4 C87.8 348 88 343 89 338 L88.5 320 C88 310 87 300 87 289 Z';
+    return clipped(boot, `
+        <path d="M90 292 C90.5 305 91.2 320 91.5 340" stroke="#fff" stroke-width="1.6" fill="none" opacity=".3" filter="url(#b05)"/>
+        <path d="M88 339 Q93 341.5 98 339" stroke="#7a3a51" stroke-width=".7" fill="none" opacity=".6"/>
+        <path d="M96.6 293 L96.4 336" stroke="#f9d7e2" stroke-width=".35" stroke-dasharray="1 .8"/>`, 'url(#suede)') +
+      `<g filter="url(#fabric)"><path d="${boot}" fill="none"/></g>
+       <path d="M89.6 351 L96.8 351 L96.4 353 L90 353 Z" fill="#4a1f2e"/>
+       <ellipse cx="93.3" cy="289.6" rx="7.6" ry="2.6" fill="#f3ecef"/>${fur}`;
   }
 };
 
 /* =========================================================
    RENDER
    ========================================================= */
-const doll = document.getElementById('doll');
-const $ = id => document.getElementById(id);
+function renderStatic() {
+  $('head').innerHTML = `<g transform="translate(0 3.5)">${buildHead()}</g>`;
+  $('torso').innerHTML = buildTorso();
+  const arms = buildArms();
+  $('armL').innerHTML = arms.L;
+  $('armR').innerHTML = arms.R;
+  $('legLBody').innerHTML = buildLeg(-1);
+  $('legRBody').innerHTML = buildLeg(1);
+}
 
 function renderDoll() {
-  $('hairBack').innerHTML = HAIR[state.hair].back;
-  $('hairFront').innerHTML = HAIR[state.hair].front;
-  $('top').innerHTML = TOPS[state.top];
+  if (!HAIR_CACHE[state.hair]) HAIR_CACHE[state.hair] = buildHair(state.hair);
+  $('hairBack').innerHTML = `<g transform="translate(0 3.5)">${HAIR_CACHE[state.hair].back}</g>`;
+  $('hairFront').innerHTML = `<g transform="translate(0 3.5)">${HAIR_CACHE[state.hair].front}</g>`;
+  $('top').innerHTML = TOPS[state.top]();
   $('skirt').innerHTML = SKIRTS[state.skirt]();
-  $('shoeL').innerHTML = SHOES[state.shoes](91.5, -1);
-  $('shoeR').innerHTML = SHOES[state.shoes](108.5, 1);
+  const shoe = SHOES[state.shoes]();
+  $('shoeL').innerHTML = shoe;
+  $('shoeR').innerHTML = `<g transform="translate(200 0) scale(-1 1)">${shoe}</g>`;
 }
 
 function popDoll() {
@@ -871,9 +1269,6 @@ function popDoll() {
 
 function buildSidebar() {
   const host = $('categories');
-  host.style.display = 'flex';
-  host.style.flexDirection = 'column';
-  host.style.gap = '12px';
   for (const [cat, data] of Object.entries(CATALOG)) {
     const box = document.createElement('div');
     box.className = 'category';
@@ -891,7 +1286,7 @@ function buildSidebar() {
         renderDoll();
         refreshActive();
         popDoll();
-        spawnFlash($('flashBack'), 25 + Math.random() * 50, 8 + Math.random() * 25, 30);
+        cameraFlash(false);
       });
       opts.appendChild(b);
     }
@@ -906,54 +1301,84 @@ function refreshActive() {
   });
 }
 
-function buildStageDecor() {
-  const row = $('bulbRow');
-  for (let i = 0; i < 18; i++) row.appendChild(document.createElement('span'));
-  const colors = ['#2b0f3d', '#3a1652', '#1f0a2e', '#45195f'];
-  [['crowdL', 1], ['crowdR', -1]].forEach(([id, dir]) => {
-    const host = $(id);
-    const count = 6;
-    for (let i = 0; i < count; i++) {
-      const f = document.createElement('div');
-      f.className = 'fan';
-      const row2 = i % 2;
-      const x = (i / count) * 85 + (row2 ? 6 : 0);
-      f.style[dir === 1 ? 'left' : 'right'] = x + '%';
-      f.style.bottom = (row2 ? 0 : 22) + 'px';
-      f.style.zIndex = row2 ? 2 : 1;
-      f.style.setProperty('--c', colors[i % colors.length]);
-      f.style.transform = `scale(${row2 ? 1.15 : .95})`;
-      f.innerHTML = `<div class="head"></div><div class="body"></div>${i % 2 === 0 ? '<div class="cam"></div>' : ''}`;
-      host.appendChild(f);
-    }
-  });
+/* =========================================================
+   AUDIENCE — seated rows in perspective along the runway
+   ========================================================= */
+const cameraSpots = [];
+function buildCrowd() {
+  const host = $('crowd');
+  const r = rng(99);
+  const tones = ['#141118', '#1a1520', '#100d13', '#1d1823', '#17121b'];
+  const rows = [0.08, 0.2, 0.34, 0.5, 0.68, 0.88];
+  for (const side of [-1, 1]) {
+    rows.forEach((fr, ri) => {
+      const top = 36 + fr * 64;              // % from top
+      const edge = 41.4 - fr * 35.2;         // runway edge x (left side) in %
+      const size = 10 + fr * 46;             // head size in px
+      const gap = 2.4 + fr * 6.5;            // % spacing
+      for (let k = 0; ; k++) {
+        const xL = edge - 2.2 - fr * 3 - k * gap - (ri % 2) * gap * .5;
+        if (xL < -4) break;
+        const x = side < 0 ? xL : 100 - xL;
+        const p = document.createElement('div');
+        p.className = 'person';
+        p.style.left = x + '%';
+        p.style.top = top + '%';
+        p.style.setProperty('--c', tones[Math.floor(r() * tones.length)]);
+        const hs = size * (.85 + r() * .3);
+        p.style.filter = `blur(${fr > .8 ? 2.2 : fr < .15 ? 1.4 : .6}px)`;
+        const rim = side < 0 ? '-' : '';
+        p.innerHTML = `<div class="h" style="width:${hs * .62}px;height:${hs * .72}px;box-shadow:inset ${rim}${hs * .08}px 0 ${hs * .1}px rgba(255,225,240,.22)"></div>
+          <div class="b" style="width:${hs * 1.45}px;height:${hs * .9}px;box-shadow:inset ${rim}${hs * .1}px 0 ${hs * .14}px rgba(255,225,240,.16)"></div>`;
+        if (r() < .3) {
+          const ph = document.createElement('div');
+          ph.className = 'phone';
+          ph.style.width = hs * .28 + 'px';
+          ph.style.height = hs * .45 + 'px';
+          ph.style.left = (hs * .55) + 'px';
+          ph.style.top = (hs * .5) + 'px';
+          p.appendChild(ph);
+          cameraSpots.push([x + (side < 0 ? .8 : -.8), top - fr * 6, fr]);
+        }
+        host.appendChild(p);
+      }
+    });
+  }
 }
 
 /* =========================================================
-   FLASHBULBS
+   CAMERA FLASHES
    ========================================================= */
 function spawnFlash(layer, xPct, yPct, size) {
-  const f = document.createElement('div');
-  f.className = 'flash';
-  f.style.left = xPct + '%';
-  f.style.top = yPct + '%';
-  f.style.setProperty('--s', size + 'px');
-  f.addEventListener('animationend', () => f.remove());
-  layer.appendChild(f);
+  const el = document.createElement('div');
+  el.className = 'flash';
+  el.style.left = xPct + '%';
+  el.style.top = yPct + '%';
+  el.style.setProperty('--s', size + 'px');
+  el.innerHTML = '<div class="core"></div><div class="streak"></div><div class="ghost"></div>';
+  el.addEventListener('animationend', () => el.remove());
+  layer.appendChild(el);
 }
 
-function randomFlash(intense) {
-  const inCrowd = Math.random() < 0.35;
-  let x, y;
-  if (inCrowd) {
-    x = Math.random() < .5 ? 3 + Math.random() * 18 : 79 + Math.random() * 18;
-    y = 72 + Math.random() * 20;
+let litTimer;
+function lightModel() {
+  doll.classList.add('lit');
+  clearTimeout(litTimer);
+  litTimer = setTimeout(() => doll.classList.remove('lit'), 70);
+}
+
+function cameraFlash(intense) {
+  const roll = Math.random();
+  if (roll < .55 && cameraSpots.length) {
+    const [x, y, fr] = cameraSpots[Math.floor(Math.random() * cameraSpots.length)];
+    spawnFlash($('flashFront'), x, y, (intense ? 30 : 20) + fr * 50);
+  } else if (roll < .8) {
+    // photographers' pit at the foot of the runway
+    spawnFlash($('flashFront'), 15 + Math.random() * 70, 96 + Math.random() * 6, intense ? 90 + Math.random() * 60 : 60);
   } else {
-    x = 3 + Math.random() * 94;
-    y = 4 + Math.random() * 55;
+    spawnFlash($('flashBack'), 5 + Math.random() * 90, 38 + Math.random() * 15, 14 + Math.random() * 14);
   }
-  const size = intense ? 30 + Math.random() * 45 : 22 + Math.random() * 25;
-  spawnFlash(inCrowd ? $('flashFront') : $('flashBack'), x, y, size);
+  if (intense || Math.random() < .5) lightModel();
 }
 
 function whiteOut() {
@@ -963,8 +1388,8 @@ function whiteOut() {
   w.classList.add('go');
 }
 
-// gentle idle flashes
-setInterval(() => { if (!showing && Math.random() < .55) randomFlash(false); }, 900);
+// occasional idle flashes from the audience
+setInterval(() => { if (!showing && Math.random() < .5) cameraFlash(false); }, 1100);
 
 /* =========================================================
    SCORING
@@ -1019,7 +1444,6 @@ function matches(req) {
 function evaluate() {
   const picks = Object.keys(CATALOG).map(cat => CATALOG[cat].items[state[cat]]);
 
-  // how well do the vibes match each other?
   const vibeCount = {};
   picks.forEach(p => p.vibes.forEach(v => vibeCount[v] = (vibeCount[v] || 0) + 1));
   const maxVibe = Math.max(...Object.values(vibeCount));
@@ -1085,7 +1509,7 @@ async function startShow() {
   doll.classList.remove('posing', 'walking');
   void wrap.offsetWidth;
 
-  $('caption').textContent = '🎀 Now walking: ' + outfitDescription();
+  $('caption').innerHTML = '<b>Now walking</b>' + outfitDescription();
   $('caption').classList.add('show');
 
   wrap.classList.add('walk');
@@ -1093,26 +1517,26 @@ async function startShow() {
 
   const flashTimer = setInterval(() => {
     const n = 1 + Math.floor(Math.random() * 3);
-    for (let i = 0; i < n; i++) setTimeout(() => randomFlash(true), i * 70);
-  }, 180);
+    for (let i = 0; i < n; i++) setTimeout(() => cameraFlash(true), i * 60);
+  }, 200);
 
-  await sleep(5000);
+  await sleep(5200);
 
   // final pose at the end of the runway
   doll.classList.remove('walking');
   wrap.classList.remove('walk');
   doll.classList.add('posing');
-  $('caption').textContent = '📸 Strike a pose!';
+  $('caption').innerHTML = '<b>End of runway</b>Strike a pose 📸';
   whiteOut();
-  for (let i = 0; i < 16; i++) setTimeout(() => randomFlash(true), i * 45);
-  await sleep(500);
+  for (let i = 0; i < 18; i++) setTimeout(() => cameraFlash(true), i * 50);
+  await sleep(450);
   whiteOut();
-  await sleep(1400);
+  await sleep(1500);
 
   clearInterval(flashTimer);
   $('caption').classList.remove('show');
-  doll.classList.remove('posing');
   await showScores();
+  doll.classList.remove('posing');
 }
 
 async function showScores() {
@@ -1145,7 +1569,6 @@ async function showScores() {
   for (let i = 0; i < cards.length; i++) {
     cards[i].classList.add('in');
     await countUp(cards[i].querySelector('.num'), scores[i]);
-    randomFlash(true);
     await sleep(350);
   }
 
@@ -1175,7 +1598,7 @@ function countUp(el, target) {
 
 function confetti(count) {
   const stage = $('stage');
-  const colors = ['#ff4fa3', '#ffe066', '#a46bff', '#6fe3ff', '#7dff9a', '#fff'];
+  const colors = ['#e8417f', '#f6d36b', '#ffffff', '#f7b6cf', '#c9a7ff'];
   for (let i = 0; i < count; i++) {
     const c = document.createElement('div');
     c.className = 'confetti';
@@ -1214,7 +1637,8 @@ $('randomBtn').addEventListener('click', () => {
 });
 
 buildSidebar();
-buildStageDecor();
+buildCrowd();
+renderStatic();
 renderDoll();
 </script>
 </body>
