@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lantern Hours — A Visual Novel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ==========================================================
+     THEME TOKENS
+     ========================================================== */
+  :root {
+    --bg: #07080c;
+    --panel: rgba(16, 18, 26, 0.78);
+    --panel-solid: #12141c;
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #ebe8f2;
+    --muted: #9b98ab;
+    --accent: #b794ff;
+    --accent-2: #ff8fb8;
+    --accent-glow: rgba(183, 148, 255, 0.35);
+    --radius: 16px;
+    --sidebar-w: 310px;
+    --ease: cubic-bezier(.22, .8, .24, 1);
+    --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-story: 'Cormorant Garamond', Georgia, serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  /* ==========================================================
+     LAYOUT
+     ========================================================== */
+  #app {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--sidebar-w);
+    grid-template-rows: 58px 1fr;
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 0 20px;
+    background: linear-gradient(180deg, rgba(10, 11, 16, .95), rgba(10, 11, 16, .75));
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    z-index: 20;
+  }
+  .brand {
+    font-family: var(--font-story);
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: .5px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    white-space: nowrap;
+  }
+  .scene-name {
+    font-size: .8rem;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bond {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: .75rem;
+    color: var(--muted);
+  }
+  .bond-bar {
+    width: 120px; height: 6px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, .08);
+    overflow: hidden;
+  }
+  .bond-fill {
+    height: 100%;
+    width: 20%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    box-shadow: 0 0 12px var(--accent-glow);
+    transition: width .9s var(--ease);
+  }
+  .bond-heart { color: var(--accent-2); transition: transform .4s var(--ease); }
+  .bond-heart.beat { transform: scale(1.5); }
+  .controls { display: flex; gap: 6px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .controls::-webkit-scrollbar { display: none; }
+  .ctrl { flex: none; white-space: nowrap; }
+  .ctrl {
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 6px 11px;
+    font-size: .75rem;
+    color: var(--muted);
+    transition: all .25s var(--ease);
+  }
+  .ctrl:hover { color: var(--text); border-color: var(--accent); background: rgba(183, 148, 255, .08); }
+  .ctrl.on { color: var(--text); border-color: var(--accent); background: rgba(183, 148, 255, .15); }
+
+  /* ---------- Stage ---------- */
+  .stage {
+    position: relative;
+    overflow: hidden;
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .bg-layer {
+    position: absolute; inset: -20px;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transform: scale(1.06);
+    transition: opacity 1.6s var(--ease), transform 12s linear;
+  }
+  .bg-layer.visible { opacity: 1; transform: scale(1); }
+  .bg-tint {
+    position: absolute; inset: 0;
+    transition: background 1.6s var(--ease);
+    pointer-events: none;
+  }
+  .vignette {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 40%, transparent 35%, rgba(0, 0, 0, .75) 100%);
+    pointer-events: none;
+  }
+  .particles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .particle {
+    position: absolute;
+    bottom: -10px;
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: rgba(255, 230, 200, .7);
+    box-shadow: 0 0 8px rgba(255, 220, 180, .8);
+    animation: floatUp linear infinite;
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(0) translateX(0); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: .8; }
+    100% { transform: translateY(-110vh) translateX(40px); opacity: 0; }
+  }
+
+  /* ---------- Character avatar (swap images in CONFIG) ---------- */
+  .avatar-wrap {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    height: 92%;
+    aspect-ratio: 2 / 3;
+    max-width: 92%;
+    transform: translateX(-50%);
+    transition: transform .9s var(--ease), filter .9s var(--ease);
+    animation: breathe 6s ease-in-out infinite;
+    transform-origin: 50% 100%;
+  }
+  @keyframes breathe {
+    0%, 100% { translate: 0 0; }
+    50%      { translate: 0 -6px; }
+  }
+  .avatar-frame {
+    position: absolute; inset: 0;
+    border-radius: 28px 28px 0 0;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent 98%);
+    mask-image: linear-gradient(180deg, #000 60%, transparent 98%);
+    box-shadow: 0 0 80px rgba(0, 0, 0, .6);
+  }
+  .avatar {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    opacity: 0;
+    transform: scale(1.04);
+    transition: opacity 1s var(--ease), transform 1.2s var(--ease), filter 1s var(--ease);
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  .avatar.visible { opacity: 1; transform: scale(1); }
+  .avatar-fallback {
+    position: absolute; inset: 0;
+    display: none;
+    background:
+      radial-gradient(circle at 50% 28%, rgba(255,255,255,.18) 0 14%, transparent 14.5%),
+      radial-gradient(ellipse at 50% 92%, rgba(255,255,255,.14) 0 38%, transparent 38.5%),
+      linear-gradient(180deg, #2a2340, #120f1c);
+  }
+  .avatar-wrap.no-image .avatar-fallback { display: block; }
+  .avatar-glow {
+    position: absolute;
+    inset: auto 10% -4% 10%;
+    height: 30%;
+    background: radial-gradient(ellipse, var(--accent-glow), transparent 70%);
+    filter: blur(30px);
+    opacity: .6;
+    transition: background 1s var(--ease), opacity 1s;
+    pointer-events: none;
+  }
+  /* Mood expressions — applied via data-mood on .avatar-wrap */
+  .avatar-wrap[data-mood="happy"]      { transform: translateX(-50%) scale(1.02); }
+  .avatar-wrap[data-mood="happy"] .avatar { filter: brightness(1.08) saturate(1.15); }
+  .avatar-wrap[data-mood="happy"] .avatar-glow { background: radial-gradient(ellipse, rgba(255,200,140,.45), transparent 70%); opacity: .9; }
+  .avatar-wrap[data-mood="shy"]        { transform: translateX(-50%) rotate(-1.5deg) scale(1.01); }
+  .avatar-wrap[data-mood="shy"] .avatar { filter: saturate(1.1) sepia(.12) brightness(1.03); }
+  .avatar-wrap[data-mood="shy"] .avatar-glow { background: radial-gradient(ellipse, rgba(255,143,184,.5), transparent 70%); opacity: 1; }
+  .avatar-wrap[data-mood="sad"]        { transform: translateX(-50%) translateY(10px) scale(.99); }
+  .avatar-wrap[data-mood="sad"] .avatar { filter: saturate(.55) brightness(.85) hue-rotate(-10deg); }
+  .avatar-wrap[data-mood="sad"] .avatar-glow { background: radial-gradient(ellipse, rgba(120,150,255,.35), transparent 70%); }
+  .avatar-wrap[data-mood="surprised"]  { transform: translateX(-50%) translateY(-8px) scale(1.035); }
+  .avatar-wrap[data-mood="surprised"] .avatar { filter: brightness(1.12) contrast(1.05); }
+  .avatar-wrap[data-mood="thoughtful"] { transform: translateX(-50%) rotate(1deg); }
+  .avatar-wrap[data-mood="thoughtful"] .avatar { filter: saturate(.85) brightness(.95); }
+  .avatar-wrap[data-mood="playful"]    { transform: translateX(-50%) rotate(1.5deg) scale(1.02); }
+  .avatar-wrap[data-mood="playful"] .avatar { filter: saturate(1.2) brightness(1.05); }
+  .avatar-wrap.pulse { animation: breathe 6s ease-in-out infinite, pulse .6s var(--ease); }
+  @keyframes pulse { 50% { filter: brightness(1.15); } }
+
+  /* ---------- Dialogue box ---------- */
+  .dialogue {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    width: min(920px, calc(100% - 32px));
+    z-index: 10;
+  }
+  .nameplate {
+    display: inline-block;
+    margin-left: 22px;
+    margin-bottom: -1px;
+    padding: 7px 22px 6px;
+    font-family: var(--font-story);
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: .5px;
+    background: linear-gradient(90deg, rgba(183,148,255,.28), rgba(255,143,184,.18));
+    border: 1px solid rgba(183, 148, 255, .35);
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+    backdrop-filter: blur(14px);
+    transition: opacity .3s, transform .3s var(--ease);
+  }
+  .nameplate.hidden { opacity: 0; transform: translateY(6px); }
+  .nameplate.player { background: linear-gradient(90deg, rgba(120,190,255,.25), rgba(120,190,255,.08)); border-color: rgba(120,190,255,.35); }
+  .textbox {
+    position: relative;
+    min-height: 132px;
+    padding: 20px 26px 22px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(18px) saturate(1.2);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255,255,255,.05);
+    cursor: pointer;
+    user-select: none;
+  }
+  .textbox p {
+    font-family: var(--font-story);
+    font-size: 1.32rem;
+    line-height: 1.55;
+    min-height: 2.6em;
+  }
+  .textbox p.narration { font-style: italic; color: #cfc9dc; }
+  .textbox p.player-line { color: #bcd9ff; }
+  .caret {
+    display: inline-block;
+    width: 2px; height: 1.1em;
+    margin-left: 2px;
+    vertical-align: -3px;
+    background: var(--accent);
+    animation: blink 1s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .next-ind {
+    position: absolute;
+    right: 20px; bottom: 12px;
+    color: var(--accent);
+    font-size: .8rem;
+    opacity: 0;
+    transition: opacity .3s;
+  }
+  .next-ind.show { opacity: 1; animation: bob 1s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(4px); } }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .input-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 14px 18px;
+    font: inherit;
+    font-size: .95rem;
+    color: var(--text);
+    background: rgba(12, 13, 19, .85);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    outline: none;
+    backdrop-filter: blur(12px);
+    transition: border-color .25s, box-shadow .25s;
+  }
+  .input-row input::placeholder { color: #6f6c80; }
+  .input-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .send-btn {
+    padding: 0 22px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #160f22;
+    box-shadow: 0 6px 24px var(--accent-glow);
+    transition: transform .2s var(--ease), filter .2s;
+  }
+  .send-btn:hover { transform: translateY(-1px); filter: brightness(1.08); }
+  .send-btn:active { transform: translateY(1px); }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 20px 16px;
+    background: linear-gradient(180deg, rgba(14, 15, 22, .96), rgba(10, 11, 16, .98));
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+  }
+  .sidebar h3 {
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .choices { display: flex; flex-direction: column; gap: 8px; }
+  .choice {
+    text-align: left;
+    padding: 12px 14px;
+    font-size: .88rem;
+    line-height: 1.35;
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: all .3s var(--ease);
+    opacity: 0;
+    transform: translateX(14px);
+    animation: slideIn .45s var(--ease) forwards;
+  }
+  .choice:hover {
+    border-color: var(--accent);
+    background: rgba(183, 148, 255, .1);
+    transform: translateX(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .3);
+  }
+  .choice.special { border-color: rgba(255, 143, 184, .35); }
+  .choices.busy .choice { opacity: .35 !important; pointer-events: none; }
+  @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+  .memory-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .memory-list li {
+    font-size: .8rem;
+    color: #c7c3d6;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, .025);
+    border-left: 2px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+  }
+  .memory-list li.empty { color: var(--muted); border-left-color: var(--border); font-style: italic; }
+  .hint { font-size: .72rem; color: #6f6c80; line-height: 1.5; }
+
+  /* ---------- Modal (log) ---------- */
+  .modal {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0, 0, 0, .6);
+    backdrop-filter: blur(6px);
+    opacity: 0; pointer-events: none;
+    transition: opacity .3s;
+    z-index: 100;
+  }
+  .modal.open { opacity: 1; pointer-events: auto; }
+  .modal-card {
+    width: min(720px, calc(100% - 32px));
+    max-height: 80vh;
+    display: flex; flex-direction: column;
+    background: var(--panel-solid);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transform: translateY(14px);
+    transition: transform .35s var(--ease);
+  }
+  .modal.open .modal-card { transform: translateY(0); }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .modal-head h2 { font-family: var(--font-story); font-size: 1.4rem; }
+  .log-body { padding: 16px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  .log-entry { font-family: var(--font-story); font-size: 1.08rem; line-height: 1.45; }
+  .log-entry b { font-family: var(--font-ui); font-size: .72rem; letter-spacing: 1.5px; text-transform: uppercase; display: block; color: var(--accent); }
+  .log-entry.you b { color: #8fc4ff; }
+  .log-entry.narr { font-style: italic; color: var(--muted); }
+
+  .toast {
+    position: fixed; top: 72px; left: 50%;
+    transform: translate(-50%, -10px);
+    padding: 10px 18px;
+    font-size: .82rem;
+    background: var(--panel-solid);
+    border: 1px solid var(--accent);
+    border-radius: 99px;
+    opacity: 0; pointer-events: none;
+    transition: all .35s var(--ease);
+    z-index: 200;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px) {
+    #app { grid-template-columns: minmax(0, 1fr); grid-template-rows: 54px 1fr auto; }
+    .topbar { gap: 10px; padding: 0 12px; }
+    .bond { flex: none; }
+    .sidebar { grid-column: 1; grid-row: 3; max-height: 30vh; border-left: none; border-top: 1px solid var(--border); padding: 12px 16px; }
+    .choices { flex-direction: row; flex-wrap: wrap; }
+    .choice { flex: 1 1 45%; padding: 10px 12px; font-size: .8rem; }
+    .memory-section, .hint { display: none; }
+    .bond-bar { width: 70px; }
+    .scene-name { display: none; }
+    .textbox p { font-size: 1.12rem; }
+    .textbox { min-height: 110px; padding: 16px 18px; }
+  }
+  @media (max-width: 520px) {
+    .brand { display: none; }
+    .ctrl { padding: 5px 8px; font-size: .68rem; }
+    .bond > span:first-child { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header class="topbar">
+    <div class="brand">Lantern Hours</div>
+    <div class="scene-name" id="sceneName">—</div>
+    <div class="bond" title="Your bond with her">
+      <span>Bond</span>
+      <span class="bond-heart" id="bondHeart">♥</span>
+      <div class="bond-bar"><div class="bond-fill" id="bondFill"></div></div>
+    </div>
+    <div class="controls">
+      <button class="ctrl" id="btnAuto" title="Auto-advance lines">Auto</button>
+      <button class="ctrl" id="btnSpeed" title="Text speed">Speed: Normal</button>
+      <button class="ctrl" id="btnLog" title="Dialogue history">Log</button>
+      <button class="ctrl" id="btnSave">Save</button>
+      <button class="ctrl" id="btnLoad">Load</button>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+    <div class="bg-layer" id="bgA"></div>
+    <div class="bg-layer" id="bgB"></div>
+    <div class="bg-tint" id="bgTint"></div>
+    <div class="particles" id="particles"></div>
+    <div class="vignette"></div>
+
+    <div class="avatar-wrap" id="avatarWrap" data-mood="neutral">
+      <div class="avatar-glow"></div>
+      <div class="avatar-frame">
+        <div class="avatar-fallback"></div>
+        <img class="avatar" id="avatarA" alt="Character portrait" draggable="false">
+        <img class="avatar" id="avatarB" alt="" draggable="false">
+      </div>
+    </div>
+
+    <section class="dialogue">
+      <div class="nameplate hidden" id="nameplate">&nbsp;</div>
+      <div class="textbox" id="textbox" role="button" tabindex="0" aria-label="Advance dialogue">
+        <p id="text"></p>
+        <span class="next-ind" id="nextInd">▼</span>
+      </div>
+      <form class="input-row" id="inputForm" autocomplete="off">
+        <input id="input" type="text" maxlength="300" placeholder="Say anything… or do something (e.g. “let's go to the rooftop”)">
+        <button class="send-btn" type="submit">Send</button>
+      </form>
+    </section>
+  </main>
+
+  <aside class="sidebar">
+    <div>
+      <h3>Choices</h3>
+      <div class="choices" id="choices"></div>
+    </div>
+    <div class="memory-section">
+      <h3 id="memoryTitle">She remembers</h3>
+      <ul class="memory-list" id="memoryList"></ul>
+    </div>
+    <p class="hint">Click the text box or press <b>Space</b> to advance. Type anything in your own words — she listens, remembers, and responds.</p>
+  </aside>
+</div>
+
+<div class="modal" id="logModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>Story So Far</h2>
+      <button class="ctrl" id="btnCloseLog">Close</button>
+    </div>
+    <div class="log-body" id="logBody"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================================================================
+   CONFIG — swap images here.
+   Replace any URL with a local path, e.g. "images/elara_happy.png".
+   Each mood can point to its own file; by default they share one
+   placeholder and moods are expressed through CSS filters/motion.
+   ================================================================== */
+const PORTRAIT = 'https://picsum.photos/seed/elara-portrait/720/1080';
+
+const CONFIG = {
+  character: {
+    name: 'Elara',
+    avatars: {
+      neutral:    PORTRAIT,
+      happy:      PORTRAIT,
+      shy:        PORTRAIT,
+      sad:        PORTRAIT,
+      surprised:  PORTRAIT,
+      thoughtful: PORTRAIT,
+      playful:    PORTRAIT
+    }
+  },
+  scenes: {
+    cafe: {
+      name: 'The Lantern Café — Late Evening',
+      image: 'https://picsum.photos/seed/vn-cafe-night/1600/900?blur=3',
+      tint: 'linear-gradient(180deg, rgba(60,30,10,.30), rgba(8,8,14,.80))',
+      arrive: 'The bell above the café door chimes. Warm lamplight, cinnamon, the soft hiss of the espresso machine.',
+      ambient: [
+        'Rain traces slow silver lines down the window beside you.',
+        'Somewhere behind the counter, a cup clinks against a saucer.',
+        'The old radio in the corner crackles into a slow piano tune.'
+      ]
+    },
+    rooftop: {
+      name: 'The Rooftop — Midnight',
+      image: 'https://picsum.photos/seed/vn-rooftop-stars/1600/900?blur=2',
+      tint: 'linear-gradient(180deg, rgba(20,20,70,.35), rgba(5,6,16,.85))',
+      arrive: 'Up the narrow stairwell, through a creaking door — and the whole city spreads out beneath a sky full of stars.',
+      ambient: [
+        'A cool breeze tugs at your sleeves; the city hums far below.',
+        'A satellite drifts silently across the sky.',
+        'Her hair catches the wind and the faint glow of the skyline.'
+      ]
+    },
+    library: {
+      name: 'Old Library — After Hours',
+      image: 'https://picsum.photos/seed/vn-old-library/1600/900?blur=3',
+      tint: 'linear-gradient(180deg, rgba(50,35,15,.35), rgba(8,7,10,.85))',
+      arrive: 'Towering shelves, the smell of paper and dust, and a single green-shaded lamp left burning just for the two of you.',
+      ambient: [
+        'A floorboard creaks somewhere between the shelves.',
+        'Dust motes drift lazily through the lamplight.',
+        'The grandfather clock ticks, patient and unhurried.'
+      ]
+    },
+    beach: {
+      name: 'The Shore — Moonrise',
+      image: 'https://picsum.photos/seed/vn-moon-shore/1600/900?blur=2',
+      tint: 'linear-gradient(180deg, rgba(10,40,70,.30), rgba(4,8,16,.85))',
+      arrive: 'Cool sand, the hush of waves, and a moon so bright it paints a silver road across the water.',
+      ambient: [
+        'A wave rushes up and retreats, leaving the sand glittering.',
+        'Far out on the water, a lighthouse sweeps its slow beam.',
+        'The salt air is cool and clean against your skin.'
+      ]
+    }
+  },
+  speeds: { Slow: 45, Normal: 26, Fast: 12, Instant: 0 },
+  autoDelay: 1600,
+  saveKey: 'lantern-hours-save-v1'
+};
+
+/* ==================================================================
+   GAME STATE
+   ================================================================== */
+const state = {
+  playerName: null,
+  bond: 20,
+  scene: 'cafe',
+  mood: 'neutral',
+  likes: [],
+  dislikes: [],
+  facts: [],
+  pending: null,
+  turns: 0,
+  askedQuestions: [],
+  log: []
+};
+
+/* ==================================================================
+   DOM
+   ================================================================== */
+const $ = id => document.getElementById(id);
+const ui = {
+  text: $('text'), nameplate: $('nameplate'), next: $('nextInd'), textbox: $('textbox'),
+  input: $('input'), form: $('inputForm'), choices: $('choices'),
+  avatarWrap: $('avatarWrap'), avatarA: $('avatarA'), avatarB: $('avatarB'),
+  bgA: $('bgA'), bgB: $('bgB'), bgTint: $('bgTint'), sceneName: $('sceneName'),
+  bondFill: $('bondFill'), bondHeart: $('bondHeart'),
+  memoryList: $('memoryList'), memoryTitle: $('memoryTitle'),
+  logModal: $('logModal'), logBody: $('logBody'), toast: $('toast'), particles: $('particles')
+};
+
+/* ==================================================================
+   UTILITIES
+   ================================================================== */
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const chance = p => Math.random() < p;
+const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* Placeholder filling: {name} -> name or "you", {n} -> ", Name" or "" */
+function fill(str) {
+  const n = state.playerName;
+  return str
+    .replace(/\{name\}/g, n || 'you')
+    .replace(/\{n\}/g, n ? ', ' + n : '');
+}
+
+/* Turn "I love my cat" into "you love your cat" for natural echoes */
+const REFLECT = {
+  'i': 'you', 'me': 'you', 'my': 'your', 'mine': 'yours', 'am': 'are', 'myself': 'yourself',
+  "i'm": "you're", "im": "you're", "i've": "you've", "i'll": "you'll", "i'd": "you'd", 'was': 'were',
+  'you': 'I', 'your': 'my', 'yours': 'mine', "you're": "I'm", 'yourself': 'myself', "you've": "I've"
+};
+function reflect(text) {
+  const words = text.toLowerCase().replace(/[.!?]+$/, '').split(/\s+/);
+  return words.map((w, i) => {
+    if (w === 'you' && i === words.length - 1) return 'me';
+    return REFLECT[w] || w;
+  }).join(' ');
+}
+
+/* ==================================================================
+   VISUALS — avatar, scenes, particles
+   ================================================================== */
+let activeAvatar = ui.avatarA;
+function setAvatarImage(src) {
+  if (activeAvatar.getAttribute('src') === src && activeAvatar.classList.contains('visible')) {
+    ui.avatarWrap.classList.remove('pulse');
+    void ui.avatarWrap.offsetWidth;
+    ui.avatarWrap.classList.add('pulse');
+    return;
+  }
+  const incoming = activeAvatar === ui.avatarA ? ui.avatarB : ui.avatarA;
+  incoming.onload = () => {
+    ui.avatarWrap.classList.remove('no-image');
+    incoming.classList.add('visible');
+    if (incoming !== activeAvatar) activeAvatar.classList.remove('visible');
+    activeAvatar = incoming;
+  };
+  incoming.onerror = () => ui.avatarWrap.classList.add('no-image');
+  incoming.src = src;
+}
+
+function setMood(mood) {
+  if (!CONFIG.character.avatars[mood]) mood = 'neutral';
+  state.mood = mood;
+  ui.avatarWrap.dataset.mood = mood;
+  setAvatarImage(CONFIG.character.avatars[mood]);
+}
+
+let activeBg = ui.bgA;
+function setScene(key) {
+  const scene = CONFIG.scenes[key];
+  if (!scene) return;
+  state.scene = key;
+  ui.sceneName.textContent = scene.name;
+  ui.bgTint.style.background = scene.tint;
+  const incoming = activeBg === ui.bgA ? ui.bgB : ui.bgA;
+  const img = new Image();
+  const show = () => {
+    incoming.style.backgroundImage = `url("${scene.image}")`;
+    incoming.classList.add('visible');
+    activeBg.classList.remove('visible');
+    activeBg = incoming;
+  };
+  img.onload = show;
+  img.onerror = () => { incoming.style.backgroundImage = 'none'; show(); };
+  img.src = scene.image;
+}
+
+function spawnParticles() {
+  for (let i = 0; i < 22; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = 10 + Math.random() * 16 + 's';
+    p.style.animationDelay = -Math.random() * 20 + 's';
+    const s = 1 + Math.random() * 3;
+    p.style.width = p.style.height = s + 'px';
+    ui.particles.appendChild(p);
+  }
+}
+
+function changeBond(delta) {
+  if (!delta) return;
+  state.bond = clamp(state.bond + delta, 0, 100);
+  updateBond();
+  if (delta > 0) {
+    ui.bondHeart.classList.add('beat');
+    setTimeout(() => ui.bondHeart.classList.remove('beat'), 400);
+  }
+}
+function updateBond() { ui.bondFill.style.width = state.bond + '%'; }
+
+function renderMemory() {
+  ui.memoryTitle.textContent = `${CONFIG.character.name} remembers`;
+  const items = [];
+  if (state.playerName) items.push(`Your name is ${state.playerName}.`);
+  state.likes.slice(-4).forEach(l => items.push(`You love ${l}.`));
+  state.dislikes.slice(-2).forEach(d => items.push(`You're not fond of ${d}.`));
+  state.facts.slice(-3).forEach(f => items.push(f));
+  ui.memoryList.innerHTML = '';
+  if (!items.length) {
+    const li = document.createElement('li');
+    li.className = 'empty';
+    li.textContent = 'Nothing yet — tell her about yourself.';
+    ui.memoryList.appendChild(li);
+  }
+  items.forEach(t => {
+    const li = document.createElement('li');
+    li.textContent = t;
+    ui.memoryList.appendChild(li);
+  });
+}
+
+/* ==================================================================
+   TYPEWRITER + LINE QUEUE
+   Line: { who: 'her' | 'you' | 'narr', text, mood?, scene? }
+   ================================================================== */
+const tw = { queue: [], full: '', idx: 0, timer: null, autoTimer: null, status: 'idle', speed: 'Normal', auto: false };
+
+function play(lines) {
+  lines.forEach(l => {
+    l.text = fill(l.text);
+    tw.queue.push(l);
+    addLog(l);
+  });
+  if (tw.status === 'idle') advance();
+}
+
+function advance() {
+  clearTimeout(tw.autoTimer);
+  if (tw.status === 'typing') { finishLine(); return; }
+  if (tw.status === 'idle' && !tw.queue.length) return;
+  const line = tw.queue.shift();
+  if (!line) { setIdle(); return; }
+  ui.choices.classList.add('busy');
+  if (line.scene) setScene(line.scene);
+  if (line.mood) setMood(line.mood);
+  showSpeaker(line.who);
+  typeLine(line.text);
+}
+
+function showSpeaker(who) {
+  ui.text.className = '';
+  ui.nameplate.classList.remove('player');
+  if (who === 'narr') {
+    ui.nameplate.classList.add('hidden');
+    ui.text.classList.add('narration');
+  } else if (who === 'you') {
+    ui.nameplate.textContent = state.playerName || 'You';
+    ui.nameplate.classList.remove('hidden');
+    ui.nameplate.classList.add('player');
+    ui.text.classList.add('player-line');
+  } else {
+    ui.nameplate.textContent = CONFIG.character.name;
+    ui.nameplate.classList.remove('hidden');
+  }
+}
+
+function typeLine(text) {
+  tw.full = text;
+  tw.idx = 0;
+  tw.status = 'typing';
+  ui.next.classList.remove('show');
+  if (CONFIG.speeds[tw.speed] === 0) { finishLine(); return; }
+  step();
+}
+
+function renderText(partial) {
+  ui.text.textContent = partial;
+  if (tw.status === 'typing') {
+    const c = document.createElement('span');
+    c.className = 'caret';
+    ui.text.appendChild(c);
+  }
+}
+
+function step() {
+  tw.idx++;
+  renderText(tw.full.slice(0, tw.idx));
+  if (tw.idx >= tw.full.length) { lineDone(); return; }
+  const ch = tw.full[tw.idx - 1];
+  let d = CONFIG.speeds[tw.speed];
+  if ('.!?…'.includes(ch)) d *= 9;
+  else if (',;:—'.includes(ch)) d *= 4;
+  tw.timer = setTimeout(step, d);
+}
+
+function finishLine() {
+  clearTimeout(tw.timer);
+  lineDone();
+}
+
+function lineDone() {
+  tw.status = tw.queue.length ? 'waiting' : 'idle';
+  renderText(tw.full);
+  if (tw.queue.length) {
+    ui.next.classList.add('show');
+    if (tw.auto) tw.autoTimer = setTimeout(advance, CONFIG.autoDelay);
+  } else {
+    setIdle();
+  }
+}
+
+function setIdle() {
+  tw.status = 'idle';
+  ui.next.classList.remove('show');
+  ui.choices.classList.remove('busy');
+  renderChoices();
+  renderMemory();
+}
+
+/* Skip remaining lines (used when the player acts mid-scene) */
+function flush() {
+  clearTimeout(tw.timer);
+  clearTimeout(tw.autoTimer);
+  tw.queue = [];
+  tw.status = 'idle';
+}
+
+/* ==================================================================
+   DIALOGUE ENGINE — intent matching + memory + reflection
+   ================================================================== */
+const her = (text, mood) => ({ who: 'her', text, mood });
+const narr = (text, scene) => ({ who: 'narr', text, scene });
+
+const PLACE_WORDS = [
+  { key: 'cafe',    re: /\b(caf[eé]|coffee|back inside|counter)\b/i },
+  { key: 'rooftop', re: /\b(roof|rooftop|stars|sky)\b/i },
+  { key: 'library', re: /\b(library|books?|shelves)\b/i },
+  { key: 'beach',   re: /\b(beach|sea|ocean|shore|waves?|water)\b/i }
+];
+const FEELING_WORDS = /^(sad|happy|tired|fine|good|great|okay|ok|bored|lonely|here|back|sorry|not|so|very|really|just)$/i;
+const NOT_NAMES = /^(hi|hello|hey|heya|hiya|yo|howdy|yes|yeah|no|nope|why|what|who|thanks|haha|lol|bye|nothing|nobody|um|uh|hmm)$/i;
+
+const FAVORITES = [
+  { re: /colou?r/, a: "Deep violet. The color the sky turns right before it lets go of the day." },
+  { re: /book|read|novel/, a: "Anything with a lighthouse in it. Lonely lights calling ships home... I can't resist that." },
+  { re: /food|eat|dish|meal/, a: "Warm bread with far too much honey. That's a confession, not a recommendation." },
+  { re: /music|song|band|sing/, a: "Old piano records — the scratchy ones. And rain on a tin roof, if that counts." },
+  { re: /season|weather/, a: "Autumn. Everything gets honest about letting go." },
+  { re: /place|spot|city/, a: "Somewhere quiet, with good light. Lately that seems to mean wherever you are." },
+  { re: /animal|pet|cat|dog/, a: "Cats. They choose you, and they make you earn it. I respect that." },
+  { re: /movie|film|show/, a: "Old black-and-white romances. Everyone talks too fast and means every word." },
+  { re: /drink|tea|coffee/, a: "Hot chocolate with cinnamon. Coffee keeps me up, and I already think too much at night." },
+  { re: /flower/, a: "Night-blooming jasmine. It waits until everyone's gone home to show off." }
+];
+
+const QUESTIONS = [
+  { q: "Can I ask you something? What's a small thing that made you smile recently?", tag: 'smile' },
+  { q: "If you could be anywhere in the world right now, where would you go?", tag: 'travel' },
+  { q: "What do you do when you can't sleep?", tag: 'sleep' },
+  { q: "Tell me something about you that most people don't know.", tag: 'secret' },
+  { q: "What were you like as a kid? I'm trying to picture it.", tag: 'kid' },
+  { q: "Is there something you've always wanted to try, but haven't yet?", tag: 'dream' },
+  { q: "What kind of music do you listen to when no one's around?", tag: 'music' }
+];
+
+function askSomething() {
+  const remaining = QUESTIONS.filter(x => !state.askedQuestions.includes(x.tag));
+  if (!remaining.length) return null;
+  const item = pick(remaining);
+  state.askedQuestions.push(item.tag);
+  state.pending = 'answer:' + item.tag;
+  return her(item.q, pick(['thoughtful', 'playful', 'neutral']));
+}
+
+function maybeAmbient(lines, p = 0.25) {
+  if (chance(p)) lines.unshift(narr(pick(CONFIG.scenes[state.scene].ambient)));
+  return lines;
+}
+
+function setName(raw) {
+  const name = cap(raw.toLowerCase());
+  const had = state.playerName;
+  state.playerName = name;
+  state.pending = null;
+  changeBond(4);
+  if (had && had !== name) {
+    return [her(`${name}? Not ${had}? ...Alright. I'll call you whatever feels like home to you.`, 'playful')];
+  }
+  return [
+    her(`${name}.`, 'shy'),
+    her(`I like how that sounds. Like the start of a story I haven't read yet.`, 'happy'),
+    her(`Stay a while, ${name}? The rain isn't going anywhere — and neither am I.`, 'neutral')
+  ];
+}
+
+function goTo(key) {
+  if (state.pending && state.pending.startsWith('offer:')) state.pending = null;
+  if (key === state.scene) {
+    return [her(pick([
+      "We're already here, silly. But I like that you're thinking about where we go together.",
+      "Look around — we made it. Maybe somewhere else next time?"
+    ]), 'playful')];
+  }
+  changeBond(2);
+  const lead = {
+    cafe:    "Back to the café? Yes — I'm getting cold anyway.",
+    rooftop: "The rooftop? At this hour? ...Perfect. Follow me — I know the way.",
+    library: "The library. I have a key I'm probably not supposed to have. Come on.",
+    beach:   "The shore! I haven't heard the ocean in so long. Let's go."
+  }[key];
+  const arriveLine = {
+    cafe:    "Mm. Warm. Okay, where were we?",
+    rooftop: "Look at all of them. I always feel smaller up here — in a good way.",
+    library: "Shh. Listen. Even the silence sounds like it's waiting for a story.",
+    beach:   "Take your shoes off. Trust me."
+  }[key];
+  return [
+    her(lead, 'happy'),
+    narr(CONFIG.scenes[key].arrive, key),
+    her(arriveLine, pick(['happy', 'thoughtful', 'playful']))
+  ];
+}
+
+/* Each intent: test(text, lower) -> match | falsy, run(match, raw) -> lines */
+const INTENTS = [
+  { id: 'pendingName',
+    test: (t, l) => state.pending === 'name' &&
+      (l.match(/^(?:it'?s |i'?m |i am |call me |name'?s |my name is )?([a-z][a-z'-]{1,20})[.!]?$/i)),
+    run: m => NOT_NAMES.test(m[1]) ? null
+      : FEELING_WORDS.test(m[1])
+        ? [her("Mm. And your name? I'd like to know what to call you.", 'playful')]
+        : setName(m[1]) },
+
+  { id: 'setName',
+    test: (t, l) => l.match(/\b(?:my name is|my name's|call me|i am called|name is)\s+([a-z][a-z'-]{1,20})/i),
+    run: m => setName(m[1]) },
+
+  { id: 'goto',
+    test: (t, l) => {
+      if (!/\b(go|head|walk|take|run|move|visit|show me|lead|let'?s|bring)\b/i.test(l)) return null;
+      const place = PLACE_WORDS.find(p => p.re.test(l));
+      return place ? place.key : null;
+    },
+    run: key => goTo(key) },
+
+  { id: 'yes',
+    test: (t, l) => state.pending && /^(yes|yeah|yep|sure|ok(ay)?|of course|definitely|absolutely|please|let'?s)\b/i.test(l) && state.pending.startsWith('offer:'),
+    run: () => { const key = state.pending.split(':')[1]; state.pending = null; return goTo(key); } },
+
+  { id: 'no',
+    test: (t, l) => state.pending && state.pending.startsWith('offer:') && /^(no|nah|nope|not now|maybe later|let'?s stay)\b/i.test(l),
+    run: () => { state.pending = null; return [her("Then we stay. I'm not complaining — not even a little.", 'shy')]; } },
+
+  { id: 'whatAreYou',
+    test: (t, l) => /\b(are you (real|human|an? (ai|bot|robot|program))|you'?re (not real|an? (ai|bot|robot|program))|chatbot)\b/i.test(l),
+    run: () => [
+      narr("She laughs softly and reaches across to press her palm flat against yours."),
+      her("Real enough to feel that. Real enough to get cold when you leave.", 'playful'),
+      her("Whatever I am, I'm here — with you. Isn't that the part that matters?", 'shy')
+    ] },
+
+  { id: 'remember',
+    test: (t, l) => /what do you (remember|know) about me|do you remember|what('?s| is) my name/i.test(l),
+    run: () => {
+      const bits = [];
+      if (state.playerName) bits.push(`your name is ${state.playerName}`);
+      if (state.likes.length) bits.push(`you love ${state.likes.slice(-3).join(', ')}`);
+      if (state.dislikes.length) bits.push(`you can't stand ${state.dislikes.slice(-2).join(' or ')}`);
+      if (!bits.length) return [her("Not enough yet. You're still a beautiful mystery — tell me something and I'll keep it safe.", 'playful')];
+      return [her(`I remember everything. ${cap(bits.join('; '))}.`, 'happy'),
+              her("I keep the little things. They're never really little.", 'shy')];
+    } },
+
+  { id: 'greeting',
+    test: (t, l) => /^(hi|hello|hey|heya|hiya|yo|howdy|good (morning|evening|afternoon|night)|greetings)\b/i.test(l),
+    run: () => { changeBond(1); return [her(pick([
+      "Hi{n}. I was hoping you'd say something.",
+      "Hello again{n}. You have a way of making the room feel less empty.",
+      "Hey{n}. I'm right here."
+    ]), 'happy')]; } },
+
+  { id: 'farewell',
+    test: (t, l) => /\b(bye|goodbye|good ?night|see you|gotta go|have to go|leaving)\b/i.test(l),
+    run: () => [
+      her(pick([
+        "Already? ...Okay. But you'll come back, won't you{n}?",
+        "Goodnight{n}. I'll save you a seat — I always do."
+      ]), 'sad'),
+      her("Whenever you return, I'll be right here. The lantern stays lit.", 'shy')
+    ] },
+
+  { id: 'howAreYou',
+    test: (t, l) => /how are you|how('?s| is) it going|how do you feel|you okay|are you ok|how have you been/i.test(l),
+    run: () => [her(pick([
+      state.bond > 55 ? "Better now. Honestly? Every time you're around, something in me unclenches." : "Good — curious, mostly. About you.",
+      "A little sleepy, a little restless. The usual midnight mix. And you?",
+      "Happy. Is that strange to admit? It feels strange to admit."
+    ]), state.bond > 55 ? 'shy' : 'happy')] },
+
+  { id: 'aboutHer',
+    test: (t, l) => /who are you|tell me about (yourself|you)|about yourself|your (story|past|life)|where are you from|what do you do/i.test(l),
+    run: () => [
+      her("Me? I grew up in a town by the sea — the kind where the lighthouse keeper knows your name.", 'thoughtful'),
+      her("I restore old books now. Torn spines, water-stained pages... I like giving forgotten stories a second chance.", 'neutral'),
+      her("Maybe that's why I come here so late. Waiting to find a story worth staying up for.", 'shy')
+    ] },
+
+  { id: 'favorite',
+    test: (t, l) => /\b(favou?rite|what do you (like|love|enjoy)|do you like)\b/i.test(l),
+    run: (m, raw) => {
+      const f = FAVORITES.find(x => x.re.test(raw.toLowerCase()));
+      if (f) return [her(f.a, pick(['happy', 'thoughtful', 'playful'])), her("And yours? Tell me — I'll remember.", 'neutral')];
+      return [her("Hmm, my favorite? It changes with the weather. Tonight it might be this — just talking with you. What's yours?", 'shy')];
+    } },
+
+  { id: 'likes',
+    test: (t, l) => l.match(/\bi (?:really |truly |absolutely |just )?(?:like|love|enjoy|adore) ([^.!?,]{2,40})/i),
+    run: m => {
+      const thing = reflect(m[1].trim());
+      if (/^(you|me)$/i.test(thing)) return null;
+      if (!state.likes.includes(thing)) state.likes.push(thing);
+      changeBond(3);
+      return [her(pick([
+        `${cap(thing)}? Noted — filed under "things I'll bring up when you least expect it."`,
+        `You lit up just now, talking about ${thing}. I want to see that more often.`,
+        `${cap(thing)}... I can see why. Tell me what you love about it?`
+      ]), 'happy')];
+    } },
+
+  { id: 'dislikes',
+    test: (t, l) => l.match(/\bi (?:really )?(?:hate|dislike|can'?t stand|don'?t like) ([^.!?,]{2,40})/i),
+    run: m => {
+      const thing = reflect(m[1].trim());
+      if (!state.dislikes.includes(thing)) state.dislikes.push(thing);
+      return [her(pick([
+        `No ${thing} then. I'll keep it far away from you.`,
+        `${cap(thing)}, huh? Good to know. Your list of enemies is safe with me.`
+      ]), 'playful')];
+    } },
+
+  { id: 'affection',
+    test: (t, l) => /\b(i love you|i like you|i'?m falling for|hold (your|my) hand|take your hand|hug|kiss|miss(ed)? you|cuddle|lean (on|against))\b/i.test(l),
+    run: () => {
+      changeBond(5);
+      if (state.bond < 35) return [
+        narr("Her eyes widen — then soften."),
+        her("O-oh. We've only just met... but I won't pretend my heart didn't skip.", 'surprised'),
+        her("Stay a little longer. Let's see where this goes.", 'shy')
+      ];
+      if (state.bond < 70) return [
+        narr("A faint blush rises to her cheeks. She doesn't look away."),
+        her("You can't just say things like that so casually{n}. ...Say it again sometime.", 'shy')
+      ];
+      return [
+        narr("She closes the distance without a word, her fingers finding yours."),
+        her("I was hoping you'd feel that way. I've been feeling it for a while now.", 'happy'),
+        her("Whatever happens next — I'm glad it's with you.", 'shy')
+      ];
+    } },
+
+  { id: 'compliment',
+    test: (t, l) => /\b(beautiful|pretty|cute|lovely|gorgeous|stunning|adorable|smart|clever|funny|kind|sweet|amazing)\b/i.test(l) && /\b(you|you'?re|your)\b/i.test(l),
+    run: () => { changeBond(4); return [
+      narr("She tucks a strand of hair behind her ear, suddenly very interested in the table."),
+      her(pick([
+        "You're going to make me forget what I was about to say{n}.",
+        "Careful. Keep talking like that and I'll start believing you.",
+        "...Thank you. Nobody's said that to me in a long time."
+      ]), 'shy')
+    ]; } },
+
+  { id: 'sad',
+    test: (t, l) => /\b(sad|lonely|alone|tired|exhausted|depressed|feel(ing)? down|upset|stressed|anxious|worried|bad day|awful|terrible|hurt|cry(ing)?|scared)\b/i.test(l),
+    run: () => { changeBond(2); return [
+      narr("Her expression softens. She leans in, close enough that you feel her warmth."),
+      her(pick([
+        "Hey. You don't have to carry that alone tonight. I'm here — and I'm not going anywhere.",
+        "Then let's be still for a moment. No fixing, no hurrying. Just us.",
+        "Tell me as much or as little as you want. I'll listen to all of it."
+      ]), 'sad')
+    ]; } },
+
+  { id: 'happy',
+    test: (t, l) => /\b(happy|great|amazing day|excited|wonderful|fantastic|good day|awesome|thrilled|glad)\b/i.test(l),
+    run: () => { changeBond(2); return [her(pick([
+      "Your smile is contagious, you know. Look — now I'm doing it too.",
+      "Good. You deserve good days. Tell me everything.",
+      "I love seeing you like this. Hold on to it a while longer?"
+    ]), 'happy')]; } },
+
+  { id: 'joke',
+    test: (t, l) => /\b(joke|make me laugh|something funny)\b/i.test(l),
+    run: () => [her(pick([
+      "Why did the book join the gym? It wanted to work on its spine. ...I restore books. I'm allowed.",
+      "I told the librarian a joke once. She didn't laugh — said it was overdue.",
+      "What do you call a sleepy ghost? A *boo*-ted nap. ...Okay, that one was terrible. Laugh anyway?"
+    ]), 'playful')] },
+
+  { id: 'laugh',
+    test: (t, l) => /^(haha|hehe|lol|lmao|😂|🤣)|\b(haha+|hehe+|lol)\b/i.test(l),
+    run: () => [her(pick([
+      "There it is — that laugh. I'm keeping it.",
+      "Don't laugh at me! ...Okay, laugh with me."
+    ]), 'happy')] },
+
+  { id: 'story',
+    test: (t, l) => /\b(tell me a story|a story|story time)\b/i.test(l),
+    run: () => [
+      her("Okay. Close your eyes.", 'thoughtful'),
+      her(pick([
+        "There was once a lighthouse keeper who fell in love with a ship she had never seen — only its lights, every night, far out at sea.",
+        "There was once a girl who collected lost letters from old books, and one day she found one addressed to her."
+      ]), 'thoughtful'),
+      her(pick([
+        "Every night she left the lamp burning a little longer. And one night... the ship turned toward shore.",
+        "It said only: 'Wait for me here. I'm almost there.' She's still not sure who wrote it."
+      ]), 'shy'),
+      her("I'll tell you how it ends some other time. That's how I make sure you come back.", 'playful')
+    ] },
+
+  { id: 'thanks',
+    test: (t, l) => /\b(thank(s| you)|thx|appreciate)\b/i.test(l),
+    run: () => { changeBond(1); return [her("You never need to thank me{n}. But I'll take it.", 'happy')]; } },
+
+  { id: 'sorry',
+    test: (t, l) => /\b(sorry|apologi[sz]e|my bad)\b/i.test(l),
+    run: () => [her("Nothing to apologize for. Not with me.", 'neutral')] },
+
+  { id: 'answer',
+    test: () => state.pending && state.pending.startsWith('answer:'),
+    run: (m, raw) => {
+      const tag = state.pending.split(':')[1];
+      state.pending = null;
+      const r = reflect(raw).slice(0, 80);
+      if (raw.length > 6) state.facts.push(cap(r) + '.');
+      changeBond(3);
+      const replies = {
+        smile:  `${cap(r)}... I love that. I'm going to think about that when I need cheering up.`,
+        travel: `Then someday, let's go. I mean it — I'll pack light.`,
+        sleep:  `Next time you can't sleep, come find me. I'm usually awake too.`,
+        secret: `Your secret's safe. I'll fold it up and keep it somewhere only I know.`,
+        kid:    `I can picture it perfectly. You haven't changed as much as you think.`,
+        dream:  `Then we'll do it together. I'll hold you to that.`,
+        music:  `Play me some of it sometime? I want to hear what your quiet sounds like.`
+      };
+      return [her(replies[tag] || `${cap(r)}. Thank you for telling me that.`, pick(['happy', 'shy']))];
+    } },
+
+  { id: 'question',
+    test: (t) => /\?\s*$/.test(t),
+    run: (m, raw) => {
+      const l = raw.toLowerCase();
+      if (/^(do|are|can|will|would|could|have|did|is) you\b/.test(l)) {
+        return [her(pick([
+          "Yes. ...I didn't even have to think about it, did I?",
+          "Hmm. Ask me again under the stars and I might give you a braver answer. But — yes.",
+          "I think I do. Strange, how easily you get the truth out of me."
+        ]), pick(['shy', 'playful', 'thoughtful']))];
+      }
+      if (/^why\b/.test(l)) {
+        return [her(pick([
+          "Why? ...Because some things just feel right, and I've stopped arguing with them.",
+          "I've asked myself the same thing. The best answer I have is: because it's you."
+        ]), 'thoughtful')];
+      }
+      return [her(pick([
+        "That's a good question. Let me think... what would you hope I'd say?",
+        "Honestly? I don't know yet. But I'd like to find out with you.",
+        "Mm. Ask me that again later — I want to give you a real answer, not a quick one."
+      ]), 'thoughtful')];
+    } }
+];
+
+/* Fallback: reflect the player's words back and keep the conversation moving */
+function fallback(raw) {
+  const words = raw.trim().split(/\s+/);
+  const lines = [];
+  if (words.length >= 3 && words.length <= 16) {
+    const r = reflect(raw);
+    lines.push(her(pick([
+      `${cap(r)}... I want to understand that better. What's behind it?`,
+      `"${cap(r)}." I keep turning that over in my head. Go on?`,
+      `I like that you tell me things like that. Why ${r}, do you think?`,
+      `${cap(r)} — hm. You always make me see things a little differently.`
+    ]), pick(['thoughtful', 'neutral', 'shy'])));
+  } else if (words.length > 16) {
+    lines.push(her(pick([
+      "I'm listening — every word of it. Thank you for trusting me with all that.",
+      "That's a lot to hold. I'm glad you're letting me hold some of it with you."
+    ]), 'thoughtful'));
+  } else {
+    lines.push(her(pick([
+      "Mm?", "Go on{n}.", "I'm here. Keep going.", "...Tell me more?"
+    ]), pick(['neutral', 'playful'])));
+  }
+  if (state.likes.length && chance(0.3)) {
+    lines.push(her(`That reminds me — you said you love ${pick(state.likes)}. Tell me about it sometime?`, 'happy'));
+  }
+  return lines;
+}
+
+function respond(raw) {
+  const text = raw.trim();
+  const lower = text.toLowerCase();
+  for (const intent of INTENTS) {
+    const m = intent.test(text, lower);
+    if (!m) continue;
+    const out = intent.run(m, text);
+    if (out) {
+      if (intent.id !== 'answer' && intent.id !== 'pendingName' && state.pending && state.pending.startsWith('answer:')) state.pending = null;
+      if (intent.id !== 'yes' && intent.id !== 'no' && state.pending && state.pending.startsWith('offer:')) state.pending = null;
+      return { lines: out, id: intent.id };
+    }
+  }
+  if (state.pending && state.pending.startsWith('offer:')) state.pending = null;
+  changeBond(1);
+  return { lines: fallback(text), id: 'fallback' };
+}
+
+function handlePlayer(raw) {
+  const text = raw.trim();
+  if (!text) return;
+  flush();
+  state.turns++;
+  const { lines, id } = respond(text);
+  maybeAmbient(lines, id === 'goto' ? 0 : 0.2);
+
+  // Keep the conversation flowing: occasional question or invitation
+  if (!state.pending && id !== 'goto' && id !== 'farewell' && state.turns > 1) {
+    if (chance(0.22)) {
+      const q = askSomething();
+      if (q) lines.push(q);
+    } else if (chance(0.15)) {
+      const other = Object.keys(CONFIG.scenes).filter(k => k !== state.scene);
+      const key = pick(other);
+      const invite = {
+        cafe: "Want to head back to the café for something warm?",
+        rooftop: "Want to sneak up to the rooftop? The stars should be out by now.",
+        library: "Want to see the old library? I know a way in.",
+        beach: "Want to walk down to the shore? I can almost hear the waves from here."
+      }[key];
+      state.pending = 'offer:' + key;
+      lines.push(her(invite, 'playful'));
+    }
+  }
+  play([{ who: 'you', text }, ...lines]);
+}
+
+/* ==================================================================
+   CHOICES SIDEBAR
+   Choice: { label, say } — spoken by the player
+        or { label, act: () => lines } — a scene action
+   ================================================================== */
+const SCENE_ACTIONS = {
+  cafe: [
+    { label: '☕ Order two hot chocolates', act: () => { changeBond(3); return [
+      narr("You return with two steaming mugs. She wraps both hands around hers and breathes in the cinnamon."),
+      her("How did you know? ...Don't answer that. Just let me be happy about it.", 'happy')]; } },
+    { label: '📖 Ask what she\'s reading',
+      act: () => [her("A water-damaged novel I'm restoring. Two strangers who keep meeting in the same café, every night, at the same hour.", 'thoughtful'),
+                  her("...I'm only now realizing how that sounds.", 'shy')] }
+  ],
+  rooftop: [
+    { label: '✨ Point out a constellation', act: () => { changeBond(3); return [
+      narr("You trace a shape among the stars with your finger. She follows it, leaning against your shoulder to see."),
+      her("I can't see it at all. ...But I'll pretend, if you keep pointing.", 'playful')]; } },
+    { label: '🧥 Offer her your jacket', act: () => { changeBond(4); return [
+      narr("You drape your jacket around her shoulders. She pulls it close."),
+      her("It's warm. It smells like you. ...I'm keeping it, by the way.", 'shy')]; } }
+  ],
+  library: [
+    { label: '📕 Pull a random book', act: () => [
+      narr("You slide an old volume from the shelf. A pressed flower falls from between its pages."),
+      her("Oh — someone left that here, maybe decades ago. A tiny message to whoever came next.", 'surprised'),
+      her("Let's put it back exactly where it was. And maybe leave one of our own someday.", 'thoughtful')] },
+    { label: '🤫 Whisper a secret', act: () => { changeBond(3); return [
+      narr("You lean close and whisper something only she can hear."),
+      her("...That's going in the vault. Forever. Thank you for trusting me with it.", 'shy')]; } }
+  ],
+  beach: [
+    { label: '🐚 Search for seashells', act: () => [
+      narr("You crouch together at the waterline, turning over shells in the moonlight."),
+      her("This one's perfect — a tiny spiral. Here. Now you have a piece of tonight to keep.", 'happy')] },
+    { label: '🌊 Walk barefoot in the waves', act: () => { changeBond(3); return [
+      narr("The water is shockingly cold. She shrieks, laughs, and grabs your arm for balance."),
+      her("Don't let go! ...Actually, don't let go even when it's warm.", 'playful')]; } }
+  ]
+};
+
+function getChoices() {
+  const name = CONFIG.character.name;
+  const list = [];
+  if (state.pending === 'name') {
+    return [{ label: '✍️ Type your name in the box below', say: null, hint: true }];
+  }
+  if (state.pending && state.pending.startsWith('offer:')) {
+    const key = state.pending.split(':')[1];
+    list.push({ label: '👍 "Yes, let\'s go."', say: "Yes, let's go!", special: true });
+    list.push({ label: '🙂 "Let\'s stay here a little longer."', say: "No, let's stay here." });
+  }
+  list.push(...(SCENE_ACTIONS[state.scene] || []));
+  list.push({ label: `💬 Ask about ${name}`, say: `Tell me about yourself, ${name}.` });
+  list.push({ label: '🌙 Compliment her', say: "You look really lovely tonight." });
+  list.push({ label: '📜 Ask for a story', say: "Tell me a story?" });
+  list.push({ label: '😄 Ask for a joke', say: "Tell me a joke." });
+  list.push({ label: '🧠 "What do you remember about me?"', say: "What do you remember about me?" });
+  if (state.bond >= 55) list.push({ label: '🤝 Reach for her hand', say: "I take your hand.", special: true });
+  Object.keys(CONFIG.scenes).filter(k => k !== state.scene).forEach(k => {
+    const label = { cafe: 'the café', rooftop: 'the rooftop', library: 'the library', beach: 'the shore' }[k];
+    list.push({ label: `🚶 Go to ${label}`, say: `Let's go to the ${k === 'beach' ? 'beach' : k}.` });
+  });
+  return list;
+}
+
+function renderChoices() {
+  ui.choices.innerHTML = '';
+  getChoices().forEach((c, i) => {
+    const b = document.createElement('button');
+    b.className = 'choice' + (c.special ? ' special' : '');
+    b.textContent = c.label;
+    b.style.animationDelay = i * 40 + 'ms';
+    b.addEventListener('click', () => {
+      if (c.hint) { ui.input.focus(); return; }
+      if (c.act) {
+        flush();
+        state.turns++;
+        play(c.act());
+      } else if (c.say) {
+        handlePlayer(c.say);
+      }
+    });
+    ui.choices.appendChild(b);
+  });
+}
+
+/* ==================================================================
+   LOG / SAVE / LOAD / SETTINGS
+   ================================================================== */
+function addLog(line) {
+  state.log.push({ who: line.who, text: line.text });
+  if (state.log.length > 400) state.log.shift();
+}
+function openLog() {
+  ui.logBody.innerHTML = '';
+  state.log.forEach(e => {
+    const d = document.createElement('div');
+    d.className = 'log-entry ' + e.who;
+    if (e.who !== 'narr') {
+      const b = document.createElement('b');
+      b.textContent = e.who === 'you' ? (state.playerName || 'You') : CONFIG.character.name;
+      d.appendChild(b);
+    }
+    d.appendChild(document.createTextNode(e.text));
+    ui.logBody.appendChild(d);
+  });
+  ui.logModal.classList.add('open');
+  ui.logBody.scrollTop = ui.logBody.scrollHeight;
+}
+
+function toast(msg) {
+  ui.toast.textContent = msg;
+  ui.toast.classList.add('show');
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => ui.toast.classList.remove('show'), 1800);
+}
+
+function save() {
+  try {
+    localStorage.setItem(CONFIG.saveKey, JSON.stringify(state));
+    toast('Progress saved');
+  } catch (e) { toast('Unable to save in this browser'); }
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(CONFIG.saveKey);
+    if (!raw) { toast('No save found'); return; }
+    Object.assign(state, JSON.parse(raw));
+    flush();
+    setScene(state.scene);
+    setMood(state.mood);
+    updateBond();
+    toast('Progress loaded');
+    play([narr(CONFIG.scenes[state.scene].arrive),
+          her(state.playerName ? `There you are, ${state.playerName}. I was starting to miss you.` : "There you are. I was starting to miss you.", 'happy')]);
+  } catch (e) { toast('Unable to load save'); }
+}
+
+/* ==================================================================
+   INPUT WIRING
+   ================================================================== */
+ui.form.addEventListener('submit', e => {
+  e.preventDefault();
+  const v = ui.input.value;
+  ui.input.value = '';
+  handlePlayer(v);
+});
+ui.textbox.addEventListener('click', advance);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { ui.logModal.classList.remove('open'); return; }
+  if (document.activeElement === ui.input) return;
+  if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); advance(); }
+});
+$('btnLog').addEventListener('click', openLog);
+$('btnCloseLog').addEventListener('click', () => ui.logModal.classList.remove('open'));
+ui.logModal.addEventListener('click', e => { if (e.target === ui.logModal) ui.logModal.classList.remove('open'); });
+$('btnSave').addEventListener('click', save);
+$('btnLoad').addEventListener('click', load);
+$('btnAuto').addEventListener('click', e => {
+  tw.auto = !tw.auto;
+  e.currentTarget.classList.toggle('on', tw.auto);
+  if (tw.auto && tw.status === 'waiting') tw.autoTimer = setTimeout(advance, CONFIG.autoDelay);
+});
+$('btnSpeed').addEventListener('click', e => {
+  const keys = Object.keys(CONFIG.speeds);
+  tw.speed = keys[(keys.indexOf(tw.speed) + 1) % keys.length];
+  e.currentTarget.textContent = 'Speed: ' + tw.speed;
+});
+
+/* ==================================================================
+   OPENING SCENE
+   ================================================================== */
+function start() {
+  spawnParticles();
+  setScene('cafe');
+  setMood('neutral');
+  updateBond();
+  renderMemory();
+  state.pending = 'name';
+  play([
+    narr("Rain taps against the tall windows of the Lantern Café. It's late; the chairs are mostly empty, the air thick with cinnamon and old paper."),
+    narr("In the corner booth, a young woman looks up from a dog-eared novel. Her eyes catch the lamplight — and then catch yours."),
+    her("Oh — hello. I didn't think anyone else wandered in this late.", 'surprised'),
+    her("I'm Elara. And you are...?", 'happy')
+  ]);
+  ui.input.focus();
+}
+start();
+</script>
+</body>
+</html>
