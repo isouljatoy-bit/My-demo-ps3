@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neon Rain — A Visual Novel</title>
+<style>
+  /* ============================================================
+     THEME TOKENS
+     ============================================================ */
+  :root {
+    --bg-0: #07080d;
+    --bg-1: #0d0f17;
+    --bg-2: #141724;
+    --bg-3: #1c2033;
+    --line: rgba(255, 255, 255, 0.08);
+    --line-strong: rgba(255, 255, 255, 0.16);
+    --text: #e8eaf2;
+    --text-dim: #9aa0b8;
+    --text-faint: #5f657d;
+    --accent: #8b7cff;
+    --accent-2: #3ee0c8;
+    --accent-glow: rgba(139, 124, 255, 0.35);
+    --danger: #ff6b8b;
+    --companion: #c6b8ff;
+    --player: #7ff0dc;
+    --radius: 14px;
+    --font-ui: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-story: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg-0);
+    color: var(--text);
+    font-family: var(--font-ui);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button, input { font: inherit; color: inherit; }
+
+  /* ============================================================
+     LAYOUT
+     ============================================================ */
+  .app {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    grid-template-rows: 56px 1fr;
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 20px;
+    background: rgba(13, 15, 23, 0.85);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(10px);
+    z-index: 20;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 13px;
+  }
+
+  .brand-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+
+  .chapter-label { color: var(--text-dim); font-weight: 400; letter-spacing: 0.04em; text-transform: none; }
+
+  .toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+
+  .tool-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  .tool-btn:hover { color: var(--text); border-color: var(--line-strong); background: var(--bg-2); }
+  .tool-btn.active { color: var(--accent-2); border-color: rgba(62, 224, 200, 0.4); }
+
+  .speed-wrap { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-faint); margin-right: 6px; }
+  .speed-wrap input { width: 80px; accent-color: var(--accent); }
+
+  /* ============================================================
+     STAGE (background + character + dialogue)
+     ============================================================ */
+  .stage {
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse at 50% 120%, rgba(139, 124, 255, 0.25), transparent 60%),
+      radial-gradient(ellipse at 15% 10%, rgba(62, 224, 200, 0.10), transparent 50%),
+      linear-gradient(180deg, #0b0d18 0%, #121528 60%, #0a0b12 100%);
+    transition: background 1.2s ease;
+  }
+
+  /* Ambient rain */
+  .rain {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    opacity: 0.35;
+    background-image: repeating-linear-gradient(
+      105deg,
+      transparent 0px, transparent 6px,
+      rgba(180, 190, 255, 0.10) 6px, rgba(180, 190, 255, 0.10) 7px
+    );
+    background-size: 200px 200px;
+    animation: rain 0.6s linear infinite;
+  }
+  @keyframes rain { from { background-position: 0 0; } to { background-position: -40px 200px; } }
+
+  .vignette {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.65) 100%);
+  }
+
+  /* ---------- Character ---------- */
+  .character-area {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    height: 88%;
+    aspect-ratio: 2 / 3;
+    max-width: 90%;
+    pointer-events: none;
+  }
+
+  .character-frame {
+    position: relative;
+    width: 100%; height: 100%;
+    animation: breathe 6s ease-in-out infinite;
+    transition: filter 0.6s ease;
+  }
+  @keyframes breathe {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50%      { transform: translateY(-6px) scale(1.006); }
+  }
+
+  .character-frame.speaking { filter: drop-shadow(0 0 28px var(--accent-glow)); }
+  .character-frame.dimmed   { filter: brightness(0.55) saturate(0.7); }
+
+  .character-img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: 24px 24px 0 0;
+    /* fade the bottom so the portrait blends into the dialogue box */
+    -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+            mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+    transition: opacity 0.7s ease, transform 0.9s cubic-bezier(.2, .8, .2, 1);
+  }
+  .character-img.visible { opacity: 1; transform: translateY(0) scale(1); }
+
+  .character-img.shake { animation: shake 0.45s ease; }
+  @keyframes shake {
+    0%, 100% { translate: 0 0; }
+    20% { translate: -6px 0; } 40% { translate: 5px 0; }
+    60% { translate: -3px 0; } 80% { translate: 2px 0; }
+  }
+
+  .mood-chip {
+    position: absolute;
+    top: 18px; left: 18px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(13, 15, 23, 0.7);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(6px);
+    font-size: 12px;
+    color: var(--text-dim);
+    z-index: 5;
+    transition: color 0.4s ease, border-color 0.4s ease;
+  }
+  .mood-chip b { color: var(--companion); font-weight: 600; }
+
+  /* ---------- Dialogue box ---------- */
+  .dialogue {
+    position: absolute;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    width: min(860px, calc(100% - 40px));
+    min-height: 168px;
+    padding: 26px 28px 22px;
+    background: linear-gradient(180deg, rgba(20, 23, 36, 0.92), rgba(13, 15, 23, 0.96));
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(14px);
+    cursor: pointer;
+    z-index: 10;
+    user-select: none;
+    animation: rise 0.6s cubic-bezier(.2, .8, .2, 1);
+  }
+  @keyframes rise { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+  .speaker {
+    position: absolute;
+    top: -15px; left: 24px;
+    padding: 5px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    background: var(--bg-3);
+    border: 1px solid var(--line-strong);
+    color: var(--companion);
+    transition: opacity 0.25s ease, color 0.25s ease;
+  }
+  .speaker.player   { color: var(--player); }
+  .speaker.hidden   { opacity: 0; }
+
+  .dialogue-text {
+    font-family: var(--font-story);
+    font-size: 19px;
+    line-height: 1.65;
+    color: var(--text);
+    min-height: 3.3em;
+    white-space: pre-wrap;
+  }
+  .dialogue-text.narration { color: var(--text-dim); font-style: italic; }
+
+  /* Typewriter: each char fades/slides in */
+  .dialogue-text .ch {
+    opacity: 0;
+    display: inline;
+    animation: charIn 0.28s ease forwards;
+  }
+  @keyframes charIn {
+    from { opacity: 0; filter: blur(3px); }
+    to   { opacity: 1; filter: blur(0); }
+  }
+
+  .caret {
+    display: inline-block;
+    width: 2px; height: 1.1em;
+    margin-left: 2px;
+    vertical-align: -0.18em;
+    background: var(--accent);
+    animation: blink 0.9s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .advance-hint {
+    position: absolute;
+    right: 22px; bottom: 14px;
+    font-size: 11px;
+    color: var(--text-faint);
+    letter-spacing: 0.08em;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .advance-hint.show { opacity: 1; }
+  .advance-hint::after {
+    content: "▼";
+    display: inline-block;
+    margin-left: 6px;
+    color: var(--accent);
+    animation: bob 1s ease-in-out infinite;
+  }
+  @keyframes bob { 50% { transform: translateY(3px); } }
+
+  /* ============================================================
+     SIDEBAR
+     ============================================================ */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-1);
+    border-left: 1px solid var(--line);
+    min-height: 0;
+  }
+
+  .panel { padding: 18px 20px; border-bottom: 1px solid var(--line); }
+
+  .panel-title {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  /* ---------- Companion card ---------- */
+  .companion-card { display: flex; align-items: center; gap: 14px; }
+  .companion-thumb {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 16px var(--accent-glow);
+    background: var(--bg-3);
+  }
+  .companion-info { flex: 1; min-width: 0; }
+  .companion-name { font-weight: 600; font-size: 15px; }
+  .companion-status { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .companion-status .dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent-2); margin-right: 6px; vertical-align: 1px;
+    box-shadow: 0 0 8px var(--accent-2);
+  }
+
+  .meter { margin-top: 14px; }
+  .meter-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .meter-track { height: 6px; border-radius: 99px; background: var(--bg-3); overflow: hidden; }
+  .meter-fill {
+    height: 100%;
+    width: 50%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width 0.8s cubic-bezier(.2, .8, .2, 1);
+  }
+  .meter-delta {
+    font-size: 12px; font-weight: 600; margin-left: 6px;
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  .meter-delta.show { opacity: 1; }
+  .meter-delta.up   { color: var(--accent-2); }
+  .meter-delta.down { color: var(--danger); }
+
+  /* ---------- Choices ---------- */
+  .choices-panel { flex: 1; overflow-y: auto; min-height: 0; }
+
+  .choices { display: flex; flex-direction: column; gap: 10px; }
+
+  .choice {
+    position: relative;
+    text-align: left;
+    padding: 13px 16px 13px 40px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.45;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateX(16px);
+    animation: choiceIn 0.45s cubic-bezier(.2, .8, .2, 1) forwards;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  }
+  .choice::before {
+    content: attr(data-key);
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    width: 18px; height: 18px;
+    display: grid; place-items: center;
+    font-size: 11px;
+    border-radius: 5px;
+    background: var(--bg-3);
+    color: var(--text-faint);
+  }
+  .choice:hover {
+    background: var(--bg-3);
+    border-color: rgba(139, 124, 255, 0.5);
+    transform: translateX(-3px);
+  }
+  .choice:hover::before { color: var(--accent); }
+  .choice:disabled { cursor: default; opacity: 0.4; }
+  @keyframes choiceIn { to { opacity: 1; transform: translateX(0); } }
+
+  .choices-empty {
+    font-size: 13px;
+    color: var(--text-faint);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  /* ---------- Companion chat input ---------- */
+  .chat-panel { border-bottom: none; border-top: 1px solid var(--line); }
+
+  .chat-form { display: flex; gap: 8px; }
+
+  .chat-input {
+    flex: 1;
+    min-width: 0;
+    padding: 11px 14px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .chat-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .chat-input::placeholder { color: var(--text-faint); }
+
+  .send-btn {
+    padding: 0 16px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), #6a5cf0);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: filter 0.2s ease, transform 0.1s ease;
+  }
+  .send-btn:hover { filter: brightness(1.15); }
+  .send-btn:active { transform: scale(0.96); }
+
+  .quick-replies { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .quick {
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 99px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .quick:hover { color: var(--text); border-color: var(--accent); }
+
+  .chat-hint { margin-top: 10px; font-size: 11px; color: var(--text-faint); line-height: 1.5; }
+
+  /* ============================================================
+     MODALS (log / ending)
+     ============================================================ */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(4, 5, 10, 0.75);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal-backdrop.open { display: flex; animation: fade 0.3s ease; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal {
+    width: min(640px, 100%);
+    max-height: 80vh;
+    display: flex; flex-direction: column;
+    background: var(--bg-1);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    animation: rise2 0.4s cubic-bezier(.2, .8, .2, 1);
+  }
+  @keyframes rise2 { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  .modal-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+    font-weight: 600;
+  }
+  .modal-body { padding: 16px 20px; overflow-y: auto; }
+
+  .log-entry { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 1.55; }
+  .log-entry:last-child { border-bottom: none; }
+  .log-speaker { font-size: 12px; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 2px; color: var(--companion); }
+  .log-speaker.player { color: var(--player); }
+  .log-entry.narration { color: var(--text-dim); font-style: italic; }
+
+  .ending-title {
+    font-family: var(--font-story);
+    font-size: 30px;
+    text-align: center;
+    margin: 10px 0 8px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .ending-text { text-align: center; color: var(--text-dim); line-height: 1.6; margin-bottom: 20px; }
+  .ending-actions { display: flex; justify-content: center; gap: 10px; }
+
+  .toast {
+    position: fixed;
+    left: 50%; top: 70px;
+    transform: translate(-50%, -10px);
+    padding: 8px 16px;
+    background: var(--bg-3);
+    border: 1px solid var(--line-strong);
+    border-radius: 99px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    z-index: 200;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ============================================================
+     RESPONSIVE
+     ============================================================ */
+  @media (max-width: 900px) {
+    body { overflow: auto; }
+    .app { grid-template-columns: 1fr; grid-template-rows: 56px 62vh auto; height: auto; }
+    .sidebar { border-left: none; border-top: 1px solid var(--line); }
+    .choices-panel { max-height: none; }
+    .speed-wrap, .chapter-label { display: none; }
+    .dialogue { min-height: 140px; padding: 22px 18px 18px; }
+    .dialogue-text { font-size: 16px; }
+    .topbar { padding: 0 12px; }
+    .tool-btn { padding: 6px 8px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ====================== TOP BAR ====================== -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      Neon Rain
+      <span class="chapter-label" id="chapterLabel">— Prologue</span>
+    </div>
+    <div class="toolbar">
+      <label class="speed-wrap" title="Text speed">
+        Speed <input type="range" id="speed" min="5" max="80" value="28">
+      </label>
+      <button class="tool-btn" id="autoBtn" title="Auto-advance (A)">Auto</button>
+      <button class="tool-btn" id="logBtn" title="History log (L)">Log</button>
+      <button class="tool-btn" id="saveBtn">Save</button>
+      <button class="tool-btn" id="loadBtn">Load</button>
+      <button class="tool-btn" id="restartBtn">Restart</button>
+    </div>
+  </header>
+
+  <!-- ====================== STAGE ====================== -->
+  <main class="stage" id="stage">
+    <div class="rain"></div>
+
+    <div class="mood-chip" id="moodChip">Mood: <b>Calm</b></div>
+
+    <div class="character-area">
+      <div class="character-frame" id="characterFrame">
+        <!-- Two stacked layers so portraits can crossfade -->
+        <img class="character-img" id="charA" alt="Companion character portrait">
+        <img class="character-img" id="charB" alt="">
+      </div>
+    </div>
+
+    <div class="vignette"></div>
+
+    <section class="dialogue" id="dialogue" aria-live="polite">
+      <div class="speaker" id="speaker">Aria</div>
+      <div class="dialogue-text" id="dialogueText"></div>
+      <div class="advance-hint" id="advanceHint">CLICK / SPACE</div>
+    </section>
+  </main>
+
+  <!-- ====================== SIDEBAR ====================== -->
+  <aside class="sidebar">
+    <div class="panel">
+      <div class="panel-title">Companion</div>
+      <div class="companion-card">
+        <img class="companion-thumb" id="companionThumb" alt="">
+        <div class="companion-info">
+          <div class="companion-name" id="companionName">Aria</div>
+          <div class="companion-status"><span class="dot"></span><span id="companionStatus">Listening</span></div>
+        </div>
+      </div>
+      <div class="meter">
+        <div class="meter-label">
+          <span>Bond <span class="meter-delta" id="bondDelta"></span></span>
+          <span id="bondValue">50</span>
+        </div>
+        <div class="meter-track"><div class="meter-fill" id="bondFill"></div></div>
+      </div>
+    </div>
+
+    <div class="panel choices-panel">
+      <div class="panel-title">Choices</div>
+      <div class="choices" id="choices">
+        <p class="choices-empty">Keep reading… choices will appear here.</p>
+      </div>
+    </div>
+
+    <div class="panel chat-panel">
+      <div class="panel-title">Talk to <span id="chatName">Aria</span></div>
+      <form class="chat-form" id="chatForm" autocomplete="off">
+        <input class="chat-input" id="chatInput" maxlength="200" placeholder="Say anything…">
+        <button class="send-btn" type="submit">Send</button>
+      </form>
+      <div class="quick-replies" id="quickReplies"></div>
+      <div class="chat-hint">Type freely at any time — she'll respond, then the story picks back up. Try telling her your name.</div>
+    </div>
+  </aside>
+</div>
+
+<!-- ====================== MODALS ====================== -->
+<div class="modal-backdrop" id="logModal">
+  <div class="modal">
+    <div class="modal-head">History <button class="tool-btn" data-close>Close</button></div>
+    <div class="modal-body" id="logBody"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="endModal">
+  <div class="modal">
+    <div class="modal-body">
+      <div class="ending-title" id="endTitle">The End</div>
+      <p class="ending-text" id="endText"></p>
+      <div class="ending-actions">
+        <button class="tool-btn" id="endLog">View Log</button>
+        <button class="tool-btn active" id="endRestart">Play Again</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================================================================
+   CONFIG — swap these URLs for your own generated character art.
+   Each mood maps to one portrait. Use any image URL or local path
+   (e.g. "art/aria_happy.png"). A 2:3 portrait ratio looks best.
+   ================================================================== */
+const CONFIG = {
+  companionName: "Aria",
+  defaultPlayerName: "You",
+  images: {
+    neutral:   "https://picsum.photos/seed/aria-neutral/800/1200",
+    happy:     "https://picsum.photos/seed/aria-happy/800/1200",
+    sad:       "https://picsum.photos/seed/aria-sad/800/1200",
+    surprised: "https://picsum.photos/seed/aria-surprised/800/1200",
+    thinking:  "https://picsum.photos/seed/aria-thinking/800/1200",
+    flustered: "https://picsum.photos/seed/aria-flustered/800/1200"
+  },
+  moodLabels: {
+    neutral: "Calm", happy: "Happy", sad: "Downcast",
+    surprised: "Surprised", thinking: "Thoughtful", flustered: "Flustered"
+  },
+  startingBond: 50,
+  saveKey: "neonRainSave_v1"
+};
+
+/* Fallback portrait if an image URL fails to load (inline SVG silhouette). */
+const FALLBACK_IMG = "data:image/svg+xml;utf8," + encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 600'>
+    <defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>
+      <stop offset='0' stop-color='#2a2550'/><stop offset='1' stop-color='#0d0f17'/></linearGradient></defs>
+    <rect width='400' height='600' fill='url(#g)'/>
+    <circle cx='200' cy='210' r='90' fill='#3b3570'/>
+    <path d='M60 600 C70 420 140 340 200 340 C260 340 330 420 340 600Z' fill='#3b3570'/>
+  </svg>`);
+
+/* ==================================================================
+   STORY — nodes with lines and branching choices.
+   line: { s: speaker ("A" companion, "P" player, null narration),
+           t: text, m: mood (optional) }
+   {player} is replaced with the player's name.
+   choice: { text, bond (+/-), go: nodeId, flag (optional) }
+   ================================================================== */
+const STORY = {
+  start: {
+    chapter: "Prologue",
+    lines: [
+      { s: null, t: "Rain hammers the rooftop of the old observatory. Below, the city hums in a thousand shades of neon." },
+      { s: null, t: "Someone is already here, sitting on the ledge with her boots dangling over a forty-story drop." },
+      { s: "A", t: "Oh. I didn't think anyone else knew about this place.", m: "surprised" },
+      { s: "A", t: "I'm Aria. I come up here when the city gets too loud. Which is… always, honestly.", m: "neutral" }
+    ],
+    choices: [
+      { text: "\"Mind if I sit with you?\"", bond: 5, go: "sit" },
+      { text: "\"Isn't that ledge a little dangerous?\"", bond: 2, go: "ledge" },
+      { text: "\"I was here first, technically. Years ago.\"", bond: -2, go: "first" }
+    ]
+  },
+
+  sit: {
+    lines: [
+      { s: "A", t: "Not at all. There's plenty of ledge to go around.", m: "happy" },
+      { s: null, t: "You settle in beside her. The rain softens, as if it's listening too." },
+      { s: "A", t: "Can I tell you something strange? I don't remember anything before last winter.", m: "thinking" }
+    ],
+    next: "memory"
+  },
+
+  ledge: {
+    lines: [
+      { s: "A", t: "Dangerous? Maybe. But it's the only place the sky feels close enough to touch.", m: "thinking" },
+      { s: "A", t: "…You can sit back from the edge if you want. I won't judge.", m: "happy" },
+      { s: "A", t: "Actually, there's something I've been wanting to tell someone. I don't remember anything before last winter.", m: "thinking" }
+    ],
+    next: "memory"
+  },
+
+  first: {
+    lines: [
+      { s: "A", t: "Ha. Then I suppose I'm the trespasser.", m: "neutral" },
+      { s: "A", t: "Funny — 'years ago' is a luxury for me. I don't remember anything before last winter.", m: "sad" }
+    ],
+    next: "memory"
+  },
+
+  memory: {
+    chapter: "Chapter 1 — Static",
+    lines: [
+      { s: null, t: "Her eyes flicker — just for a moment — with a faint blue light, like a screen waking up." },
+      { s: "A", t: "I woke up in a repair clinic in the Lower Ward. No name. No ID. Just a tag on my wrist that said ARIA-7.", m: "sad" },
+      { s: "A", t: "Sometimes I wonder if I'm even… real. Is that a weird thing to say to a stranger?", m: "thinking" }
+    ],
+    choices: [
+      { text: "\"You feel real to me.\"", bond: 8, go: "real", flag: "kind" },
+      { text: "\"Want me to help you find out who you were?\"", bond: 6, go: "help", flag: "helper" },
+      { text: "\"Does it matter? You're here now.\"", bond: 3, go: "now" },
+      { text: "\"That is pretty weird, yeah.\"", bond: -5, go: "weird" }
+    ]
+  },
+
+  real: {
+    lines: [
+      { s: "A", t: "…", m: "flustered" },
+      { s: "A", t: "You can't just say things like that so casually, {player}.", m: "flustered" },
+      { s: "A", t: "But — thank you. I think I needed to hear it.", m: "happy" }
+    ],
+    next: "signal"
+  },
+
+  help: {
+    lines: [
+      { s: "A", t: "You'd do that? For someone you met five minutes ago?", m: "surprised" },
+      { s: "A", t: "Then let's start with this.", m: "thinking" },
+      { s: null, t: "She pulls back her sleeve. The tag reads ARIA-7 — and beneath it, a tiny etched logo: a crescent moon." }
+    ],
+    next: "signal"
+  },
+
+  now: {
+    lines: [
+      { s: "A", t: "Here now. Hm. That's a nice way of looking at it.", m: "thinking" },
+      { s: "A", t: "Maybe the past isn't a debt I have to pay off.", m: "happy" }
+    ],
+    next: "signal"
+  },
+
+  weird: {
+    lines: [
+      { s: "A", t: "Right. Sorry. Forget I said anything.", m: "sad" },
+      { s: null, t: "She pulls her knees to her chest. The silence stretches." }
+    ],
+    next: "signal"
+  },
+
+  signal: {
+    chapter: "Chapter 2 — Signal",
+    lines: [
+      { s: null, t: "A siren wails somewhere far below. Then — every billboard in the district goes dark at once." },
+      { s: "A", t: "That's… that's not a blackout. Someone's broadcasting on a hidden band.", m: "surprised" },
+      { s: "A", t: "I can hear it. Inside my head. It's calling my designation.", m: "sad" },
+      { s: "A", t: "{player}, I don't know what happens if I answer it.", m: "thinking" }
+    ],
+    choices: [
+      { text: "\"Answer it. Whatever you find, I'll be right here.\"", bond: 8, go: "answer" },
+      { text: "\"Don't. You don't owe them anything.\"", bond: 4, go: "refuse" },
+      { text: "\"Let's trace it together — carefully.\"", bond: 6, go: "trace" }
+    ]
+  },
+
+  answer: {
+    lines: [
+      { s: null, t: "She closes her eyes. Blue light spills from beneath her lashes." },
+      { s: "A", t: "It's… a message. From me. An older me, recorded before they wiped my memory.", m: "surprised" },
+      { s: "A", t: "She says: 'If you're hearing this, you found someone worth trusting. Don't let go of them.'", m: "flustered" }
+    ],
+    next: "ending"
+  },
+
+  refuse: {
+    lines: [
+      { s: "A", t: "You're right. Whoever made me doesn't get to decide who I become.", m: "thinking" },
+      { s: null, t: "She mutes the signal. One by one, the billboards flicker back to life." },
+      { s: "A", t: "I'd rather build new memories. Starting tonight.", m: "happy" }
+    ],
+    next: "ending"
+  },
+
+  trace: {
+    lines: [
+      { s: null, t: "You hold out your old comm-deck. She links her wrist-tag to it with a quiet click." },
+      { s: "A", t: "Source is… the Crescent Moon Archive. Two blocks east.", m: "thinking" },
+      { s: "A", t: "We could go now. Or we could wait out the rain. Your call, partner.", m: "happy" }
+    ],
+    next: "ending"
+  },
+
+  ending: {
+    lines: [
+      { s: null, t: "The rain thins to a whisper. Dawn is still hours away, but the sky is already a little lighter." }
+    ],
+    end: true
+  }
+};
+
+const ENDINGS = [
+  { min: 85, title: "Signal Found",
+    text: "Aria takes your hand without a word. Whatever she was before, she knows exactly who she wants to be now — and who she wants beside her." },
+  { min: 65, title: "Two Lights in the Rain",
+    text: "You part ways at sunrise, but she presses a frequency into your palm. \"Call me,\" she says. \"I'll answer this one.\"" },
+  { min: 40, title: "Strangers, Still",
+    text: "Aria thanks you politely and disappears into the crowd. Maybe, on another rainy night, the rooftop will bring you together again." },
+  { min: -Infinity, title: "Static",
+    text: "When you look back, the ledge is empty. Only a wet footprint and the hum of the city remain." }
+];
+
+/* ==================================================================
+   COMPANION BRAIN — simple intent matching for free-text input.
+   Each intent: pattern, mood, bond change, list of replies.
+   ================================================================== */
+const INTENTS = [
+  { id: "setName", re: /\b(?:my name is|i'?m called|call me|name'?s)\s+([a-z][a-z' -]{0,20})/i },
+  { id: "insult", re: /\b(stupid|dumb|hate you|ugly|shut up|annoying|useless|boring)\b/i, mood: "sad", bond: -5, replies: [
+      "Oh. I… see. I didn't realize I was bothering you.",
+      "That stung more than I expected it to.",
+      "If you want me to be quiet, you only have to ask." ] },
+  { id: "love", re: /\b(love you|like you|marry|date me|crush)\b/i, mood: "flustered", bond: 4, replies: [
+      "W-what? We just met! …Ask me again when the rain stops.",
+      "You're going to short-circuit me saying things like that, {player}.",
+      "My heart rate monitor just did something it's never done before." ] },
+  { id: "compliment", re: /\b(beautiful|pretty|cute|gorgeous|smart|amazing|cool|awesome|kind|sweet|lovely)\b/i, mood: "flustered", bond: 3, replies: [
+      "Th-thank you. I don't really know what to do with compliments.",
+      "You're sweet, {player}. Don't let the city change that.",
+      "Careful. I might start believing you." ] },
+  { id: "greet", re: /^\s*(hi|hello|hey|yo|hiya|greetings|good (morning|evening|afternoon))\b/i, mood: "happy", bond: 1, replies: [
+      "Hey, {player}. Glad you're still here.",
+      "Hello again. The rain's a little gentler with you around.",
+      "Hi! I was hoping you'd say something." ] },
+  { id: "howAreYou", re: /\b(how are you|how'?re you|how('?s| is) it going|you ok|are you okay|how do you feel)\b/i, mood: "thinking", bond: 2, replies: [
+      "Honestly? A little scattered. But better now than an hour ago.",
+      "My systems say 'nominal.' My gut says 'nervous.' I'm going with the gut.",
+      "I'm okay. Thanks for asking — not many people do." ] },
+  { id: "sad", re: /\b(sad|tired|lonely|depressed|bad day|upset|anxious|stressed|hurt|scared)\b/i, mood: "sad", bond: 3, replies: [
+      "Hey… come sit closer. You don't have to carry that alone tonight.",
+      "I'm sorry, {player}. Want to just watch the lights for a while? No talking required.",
+      "For what it's worth, I'm really glad you came up here instead of staying alone." ] },
+  { id: "happy", re: /\b(happy|great|good|excited|fun|glad)\b/i, mood: "happy", bond: 2, replies: [
+      "That makes me happy too. Is that how it works? I think that's how it works.",
+      "Good! Hold onto that feeling — the city tries to steal it.",
+      "Your smile's contagious, you know." ] },
+  { id: "joke", re: /\b(joke|funny|laugh|make me smile)\b/i, mood: "happy", bond: 2, replies: [
+      "Why did the android break up with the toaster? It said their relationship felt… overcooked. I'm still workshopping it.",
+      "I tried stand-up once. The audience was a vending machine. It gave me a standing ovation. Or it was just stuck.",
+      "Knock knock. …Wait, no, it's raining too hard to hear the door." ] },
+  { id: "thanks", re: /\b(thank|thanks|thx|ty)\b/i, mood: "happy", bond: 2, replies: [
+      "Anytime, {player}.",
+      "You don't have to thank me. But I like that you did.",
+      "Of course." ] },
+  { id: "who", re: /\b(who are you|your name|what are you|are you (a )?(robot|android|human|ai))\b/i, mood: "thinking", bond: 1, replies: [
+      "I'm Aria. That's all I know for sure. The rest I'm figuring out, one rooftop at a time.",
+      "Human? Android? Somewhere in between, maybe. Does it change how you see me?",
+      "ARIA-7, according to my wrist. Just Aria, according to me." ] },
+  { id: "where", re: /\b(where are we|this place|the city|observatory|rooftop)\b/i, mood: "neutral", bond: 1, replies: [
+      "The old Halden Observatory. Closed for twenty years. The telescope still works if you kick it.",
+      "Neo-Halden. Nine million people and somehow it's still lonely.",
+      "My secret spot. Well — our secret spot now, I guess." ] },
+  { id: "bye", re: /\b(bye|goodbye|good night|goodnight|see you|gotta go|leave)\b/i, mood: "sad", bond: 0, replies: [
+      "Already? …Stay a little longer. The story's not over yet.",
+      "Not yet, {player}. Just a few more minutes.",
+      "If you leave now, who's going to keep me from falling off this ledge? Kidding. Mostly." ] },
+  { id: "question", re: /\?\s*$/, mood: "thinking", bond: 1, replies: [
+      "Hmm. That's a good question. I'll need to think about it — ask me again later?",
+      "I don't have a clean answer for that. Does anyone?",
+      "Why do you ask? …No, I'm genuinely curious." ] }
+];
+
+const DEFAULT_REPLIES = [
+  "\"{echo}\"… I like the way you put that.",
+  "Tell me more about {echo}. I'm listening.",
+  "Hm. I'm saving that thought somewhere safe, {player}.",
+  "You're an interesting person, you know that?",
+  "I'm not sure I understand — but I want to."
+];
+
+const QUICK_REPLIES = ["How are you?", "Who are you really?", "Tell me a joke", "You're amazing", "I'm feeling lonely"];
+
+/* ==================================================================
+   STATE
+   ================================================================== */
+const state = {
+  node: "start",
+  lineIndex: 0,
+  bond: CONFIG.startingBond,
+  mood: "neutral",
+  playerName: CONFIG.defaultPlayerName,
+  flags: {},
+  log: [],
+  interjecting: false,  // true while the companion answers a typed message
+  awaitingChoice: false,
+  ended: false
+};
+
+let typing = false;
+let typeTimer = null;
+let typeToken = 0;
+let autoMode = false;
+let autoTimer = null;
+let activeImg = 0;      // which of the two portrait layers is visible
+let currentImgSrc = "";
+
+/* ==================================================================
+   DOM HELPERS
+   ================================================================== */
+const $ = (id) => document.getElementById(id);
+const els = {
+  dialogue: $("dialogue"), text: $("dialogueText"), speaker: $("speaker"),
+  hint: $("advanceHint"), choices: $("choices"), frame: $("characterFrame"),
+  imgs: [$("charA"), $("charB")], thumb: $("companionThumb"),
+  moodChip: $("moodChip"), status: $("companionStatus"),
+  bondFill: $("bondFill"), bondValue: $("bondValue"), bondDelta: $("bondDelta"),
+  chatForm: $("chatForm"), chatInput: $("chatInput"), quick: $("quickReplies"),
+  speed: $("speed"), chapter: $("chapterLabel")
+};
+
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const fill = (str, extra = {}) =>
+  str.replace(/\{player\}/g, state.playerName).replace(/\{(\w+)\}/g, (m, k) => (k in extra ? extra[k] : m));
+
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+/* ==================================================================
+   CHARACTER PORTRAIT — crossfade between two stacked <img> layers
+   ================================================================== */
+function setMood(mood, { shake = false } = {}) {
+  if (!CONFIG.images[mood]) mood = "neutral";
+  state.mood = mood;
+  els.moodChip.innerHTML = `Mood: <b>${CONFIG.moodLabels[mood]}</b>`;
+  els.status.textContent = CONFIG.moodLabels[mood];
+
+  const src = CONFIG.images[mood];
+  if (src === currentImgSrc) {
+    if (shake) bump(els.imgs[activeImg]);
+    return;
+  }
+  currentImgSrc = src;
+
+  const next = els.imgs[1 - activeImg];
+  const prev = els.imgs[activeImg];
+  const reveal = () => {
+    next.classList.add("visible");
+    prev.classList.remove("visible");
+    activeImg = 1 - activeImg;
+    if (shake) bump(next);
+  };
+  next.onload = reveal;
+  next.onerror = () => { next.onerror = null; next.src = FALLBACK_IMG; };
+  next.src = src;
+  if (next.complete && next.naturalWidth) reveal();
+
+  els.thumb.src = src;
+}
+
+function bump(img) {
+  img.classList.remove("shake");
+  void img.offsetWidth; // restart animation
+  img.classList.add("shake");
+}
+
+function preloadImages() {
+  Object.values(CONFIG.images).forEach((src) => { const i = new Image(); i.src = src; });
+}
+
+/* ==================================================================
+   BOND METER
+   ================================================================== */
+function changeBond(delta) {
+  if (!delta) return;
+  state.bond = Math.max(0, Math.min(100, state.bond + delta));
+  renderBond();
+  const d = els.bondDelta;
+  d.textContent = (delta > 0 ? "+" : "") + delta;
+  d.className = "meter-delta show " + (delta > 0 ? "up" : "down");
+  clearTimeout(changeBond._t);
+  changeBond._t = setTimeout(() => d.classList.remove("show"), 1400);
+}
+
+function renderBond() {
+  els.bondFill.style.width = state.bond + "%";
+  els.bondValue.textContent = state.bond;
+}
+
+/* ==================================================================
+   TYPEWRITER
+   ================================================================== */
+function typeLine(line, onDone) {
+  const token = ++typeToken;
+  clearTimeout(typeTimer);
+  clearTimeout(autoTimer);
+
+  const isNarration = !line.s;
+  const isPlayer = line.s === "P";
+  const text = fill(line.t);
+
+  // Speaker tag
+  els.speaker.classList.toggle("hidden", isNarration);
+  els.speaker.classList.toggle("player", isPlayer);
+  els.speaker.textContent = isPlayer ? state.playerName : CONFIG.companionName;
+  els.text.classList.toggle("narration", isNarration);
+
+  // Character emphasis
+  els.frame.classList.toggle("speaking", line.s === "A");
+  els.frame.classList.toggle("dimmed", isPlayer);
+  if (line.m) setMood(line.m, { shake: line.m === "surprised" });
+
+  els.text.textContent = "";
+  els.hint.classList.remove("show");
+  const caret = document.createElement("span");
+  caret.className = "caret";
+  els.text.appendChild(caret);
+
+  typing = true;
+  let i = 0;
+  const step = () => {
+    if (token !== typeToken) return;
+    if (i >= text.length) return finish();
+    const ch = document.createElement("span");
+    ch.className = "ch";
+    ch.textContent = text[i];
+    els.text.insertBefore(ch, caret);
+    const c = text[i++];
+    // Natural pauses on punctuation
+    const base = 90 - Number(els.speed.value);
+    const delay = /[.!?…]/.test(c) ? base * 6 : /[,;:—]/.test(c) ? base * 3 : base;
+    typeTimer = setTimeout(step, delay);
+  };
+
+  const finish = () => {
+    typing = false;
+    els.text.textContent = text;
+    els.text.appendChild(caret);
+    els.hint.classList.add("show");
+    finishLine = null;
+    onDone && onDone();
+  };
+  finishLine = () => { if (token === typeToken) { clearTimeout(typeTimer); finish(); } };
+
+  addLog(line, text);
+  step();
+}
+let finishLine = null;
+
+/* ==================================================================
+   STORY FLOW
+   ================================================================== */
+function currentNode() { return STORY[state.node]; }
+
+function showCurrentLine() {
+  const node = currentNode();
+  if (node.chapter && state.lineIndex === 0) {
+    els.chapter.textContent = "— " + node.chapter;
+  }
+  const line = node.lines[state.lineIndex];
+  typeLine(line, () => {
+    const isLast = state.lineIndex >= node.lines.length - 1;
+    if (isLast && node.choices) {
+      renderChoices(node.choices);
+    } else if (isLast && node.end) {
+      setTimeout(showEnding, 900);
+    } else {
+      scheduleAuto();
+    }
+  });
+}
+
+function advance() {
+  if (state.ended) return;
+  if (typing) { finishLine && finishLine(); return; }
+  if (state.interjecting) return;          // companion is mid-reply
+  if (resumePending) {                      // pick the story back up after a chat
+    resumePending = false;
+    showCurrentLine();
+    return;
+  }
+  if (state.awaitingChoice) return;        // must pick a choice
+
+  const node = currentNode();
+  if (state.lineIndex < node.lines.length - 1) {
+    state.lineIndex++;
+    showCurrentLine();
+  } else if (node.next) {
+    goTo(node.next);
+  }
+}
+let resumePending = false;
+
+function goTo(nodeId) {
+  chatId++;
+  state.interjecting = false;
+  state.node = nodeId;
+  state.lineIndex = 0;
+  state.awaitingChoice = false;
+  clearChoices();
+  showCurrentLine();
+}
+
+function renderChoices(choices, silent = false) {
+  state.awaitingChoice = true;
+  els.hint.classList.remove("show");
+  els.choices.innerHTML = "";
+  choices.forEach((c, idx) => {
+    const b = document.createElement("button");
+    b.className = "choice";
+    b.dataset.key = idx + 1;
+    b.textContent = c.text;
+    b.style.animationDelay = (silent ? 0 : idx * 90) + "ms";
+    b.addEventListener("click", () => choose(c));
+    els.choices.appendChild(b);
+  });
+}
+
+function clearChoices() {
+  els.choices.innerHTML = '<p class="choices-empty">Keep reading… choices will appear here.</p>';
+}
+
+function choose(choice) {
+  if (!state.awaitingChoice || typing || state.interjecting) return;
+  [...els.choices.children].forEach((b) => (b.disabled = true));
+  if (choice.flag) state.flags[choice.flag] = true;
+  changeBond(choice.bond || 0);
+  // Show what the player said, then branch
+  state.awaitingChoice = false;
+  const said = choice.text.replace(/^"|"$/g, "");
+  typeLine({ s: "P", t: said }, () => setTimeout(() => goTo(choice.go), 650));
+}
+
+/* ==================================================================
+   COMPANION CHAT (free text input)
+   ================================================================== */
+function respondTo(input) {
+  const msg = input.trim();
+  if (!msg || state.ended) return;
+
+  // Name capture
+  const nameMatch = msg.match(INTENTS[0].re);
+  let reply, mood = "neutral", bond = 0;
+
+  if (nameMatch) {
+    const name = nameMatch[1].trim().split(/\s+/).slice(0, 2)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+    state.playerName = name;
+    reply = pick([
+      `${name}. I like that. I'll remember it — I'm getting better at remembering things.`,
+      `Nice to properly meet you, ${name}.`,
+      `${name}… saved. Permanently. That's a promise.`
+    ]);
+    mood = "happy"; bond = 3;
+  } else {
+    const intent = INTENTS.slice(1).find((it) => it.re.test(msg));
+    if (intent) {
+      reply = fill(pick(intent.replies));
+      mood = intent.mood; bond = intent.bond;
+    } else {
+      // Echo back the most meaningful word from the input
+      const words = msg.replace(/[^\w\s'-]/g, "").split(/\s+/).filter((w) => w.length > 3);
+      const echo = words.sort((a, b) => b.length - a.length)[0] || msg.slice(0, 30);
+      reply = fill(pick(DEFAULT_REPLIES), { echo: echo.toLowerCase() });
+      mood = pick(["thinking", "neutral", "happy"]);
+    }
+  }
+
+  // Don't let chat spam the bond meter
+  state.chatCount = (state.chatCount || 0) + 1;
+  if (state.chatCount > 8 && bond > 0) bond = 0;
+  changeBond(bond);
+
+  // If we were mid-story (not at a choice), the interrupted line replays afterward.
+  if (!state.awaitingChoice) resumePending = true;
+  playInterjection([{ s: "P", t: msg }, { s: "A", t: reply, m: mood }]);
+}
+
+/* Plays chat lines back-to-back, then returns control to the story. */
+let chatId = 0;
+function playInterjection(lines) {
+  const id = ++chatId;
+  state.interjecting = true;
+  const playNext = (i) => {
+    if (id !== chatId) return;
+    if (i >= lines.length) {
+      state.interjecting = false;
+      if (state.awaitingChoice) renderChoices(currentNode().choices, true);
+      else scheduleAuto();
+      return;
+    }
+    typeLine(lines[i], () => setTimeout(() => playNext(i + 1), i < lines.length - 1 ? 450 : 0));
+  };
+  playNext(0);
+}
+
+/* ==================================================================
+   AUTO MODE
+   ================================================================== */
+function scheduleAuto() {
+  clearTimeout(autoTimer);
+  if (!autoMode || state.awaitingChoice || state.ended) return;
+  autoTimer = setTimeout(advance, 1800);
+}
+
+/* ==================================================================
+   LOG
+   ================================================================== */
+function addLog(line, text) {
+  const last = state.log[state.log.length - 1];
+  if (last && last.text === text && last.s === line.s) return;
+  state.log.push({ s: line.s, text, name: line.s === "P" ? state.playerName : CONFIG.companionName });
+  if (state.log.length > 300) state.log.shift();
+}
+
+function openLog() {
+  const body = $("logBody");
+  body.innerHTML = "";
+  state.log.forEach((e) => {
+    const div = document.createElement("div");
+    div.className = "log-entry" + (e.s ? "" : " narration");
+    if (e.s) {
+      const sp = document.createElement("div");
+      sp.className = "log-speaker" + (e.s === "P" ? " player" : "");
+      sp.textContent = e.name;
+      div.appendChild(sp);
+    }
+    div.appendChild(document.createTextNode(e.text));
+    body.appendChild(div);
+  });
+  $("logModal").classList.add("open");
+  body.scrollTop = body.scrollHeight;
+}
+
+/* ==================================================================
+   ENDING
+   ================================================================== */
+function showEnding() {
+  state.ended = true;
+  const end = ENDINGS.find((e) => state.bond >= e.min);
+  setMood(state.bond >= 65 ? "happy" : state.bond >= 40 ? "thinking" : "sad");
+  $("endTitle").textContent = end.title;
+  $("endText").textContent = `${end.text}  (Final bond: ${state.bond})`;
+  $("endModal").classList.add("open");
+}
+
+/* ==================================================================
+   SAVE / LOAD / RESTART
+   ================================================================== */
+function save() {
+  try {
+    const { node, lineIndex, bond, mood, playerName, flags, log, chatCount } = state;
+    localStorage.setItem(CONFIG.saveKey, JSON.stringify({ node, lineIndex, bond, mood, playerName, flags, log, chatCount }));
+    toast("Game saved");
+  } catch { toast("Saving isn't available in this browser"); }
+}
+
+function load() {
+  let data;
+  try { data = JSON.parse(localStorage.getItem(CONFIG.saveKey)); } catch { data = null; }
+  if (!data || !STORY[data.node]) { toast("No save found"); return; }
+  chatId++;
+  Object.assign(state, data, { interjecting: false, awaitingChoice: false, ended: false });
+  resumePending = false;
+  $("endModal").classList.remove("open");
+  clearChoices();
+  renderBond();
+  setMood(data.mood);
+  showCurrentLine();
+  toast("Game loaded");
+}
+
+function restart() {
+  Object.assign(state, {
+    node: "start", lineIndex: 0, bond: CONFIG.startingBond, mood: "neutral",
+    playerName: CONFIG.defaultPlayerName, flags: {}, log: [], interjecting: false,
+    awaitingChoice: false, ended: false, chatCount: 0
+  });
+  chatId++;
+  resumePending = false;
+  $("endModal").classList.remove("open");
+  els.chapter.textContent = "— Prologue";
+  clearChoices();
+  renderBond();
+  setMood("neutral");
+  setTimeout(showCurrentLine, 500);
+}
+
+/* ==================================================================
+   EVENTS
+   ================================================================== */
+els.dialogue.addEventListener("click", () => advance());
+
+els.chatForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const v = els.chatInput.value;
+  els.chatInput.value = "";
+  respondTo(v);
+});
+
+QUICK_REPLIES.forEach((q) => {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "quick";
+  b.textContent = q;
+  b.addEventListener("click", () => respondTo(q));
+  els.quick.appendChild(b);
+});
+
+$("autoBtn").addEventListener("click", (e) => {
+  autoMode = !autoMode;
+  e.currentTarget.classList.toggle("active", autoMode);
+  if (autoMode && !typing) scheduleAuto();
+});
+$("logBtn").addEventListener("click", openLog);
+$("saveBtn").addEventListener("click", save);
+$("loadBtn").addEventListener("click", load);
+$("restartBtn").addEventListener("click", restart);
+$("endRestart").addEventListener("click", restart);
+$("endLog").addEventListener("click", () => { $("endModal").classList.remove("open"); openLog(); });
+
+document.querySelectorAll(".modal-backdrop").forEach((m) => {
+  m.addEventListener("click", (e) => {
+    if (e.target === m || e.target.hasAttribute("data-close")) {
+      m.classList.remove("open");
+      if (m.id === "logModal" && state.ended) $("endModal").classList.add("open");
+    }
+  });
+});
+
+document.addEventListener("keydown", (e) => {
+  if (document.activeElement === els.chatInput) return;
+  const modalOpen = document.querySelector(".modal-backdrop.open");
+  if (e.key === "Escape" && modalOpen) { modalOpen.classList.remove("open"); return; }
+  if (modalOpen) return;
+
+  if (e.key === " " || e.key === "Enter") { e.preventDefault(); advance(); }
+  else if (/^[1-9]$/.test(e.key) && state.awaitingChoice) {
+    const btn = els.choices.children[Number(e.key) - 1];
+    if (btn && !btn.disabled) btn.click();
+  }
+  else if (e.key.toLowerCase() === "l") openLog();
+  else if (e.key.toLowerCase() === "a") $("autoBtn").click();
+  else if (e.key === "/" || e.key.toLowerCase() === "t") { e.preventDefault(); els.chatInput.focus(); }
+});
+
+/* ==================================================================
+   BOOT
+   ================================================================== */
+els.imgs[0].onerror = () => { els.imgs[0].onerror = null; els.imgs[0].src = FALLBACK_IMG; };
+els.thumb.onerror = () => { els.thumb.onerror = null; els.thumb.src = FALLBACK_IMG; };
+$("companionName").textContent = CONFIG.companionName;
+$("chatName").textContent = CONFIG.companionName;
+preloadImages();
+renderBond();
+setMood("neutral");
+setTimeout(showCurrentLine, 600);
+</script>
+</body>
+</html>
