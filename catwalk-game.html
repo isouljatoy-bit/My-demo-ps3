@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glam Runway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #ff4fa3;
+    --pink-dark: #e0287f;
+    --pink-soft: #ffe1f0;
+    --purple: #a46bff;
+    --ink: #4a2348;
+    --card: #ffffff;
+    --bg: #fff5fb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Poppins', 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    overflow: hidden;
+  }
+  .app { display: flex; height: 100vh; }
+
+  /* ---------------- SIDEBAR / DRESSING ROOM ---------------- */
+  .sidebar {
+    width: 340px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #fff 0%, #ffeef7 100%);
+    border-right: 4px solid #ffc2e0;
+    padding: 18px 16px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 5;
+  }
+  .sidebar h1 {
+    font-family: 'Pacifico', cursive;
+    font-weight: 400;
+    font-size: 30px;
+    color: var(--pink);
+    text-align: center;
+    text-shadow: 2px 2px 0 #ffd3ea;
+    line-height: 1.2;
+  }
+  .sidebar .subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: #a0628f;
+    margin-top: -8px;
+  }
+  .category {
+    background: var(--card);
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: 0 4px 14px rgba(255, 79, 163, 0.12);
+    border: 2px solid #ffe0ef;
+  }
+  .category h3 {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: var(--pink-dark);
+    margin-bottom: 8px;
+  }
+  .options { display: grid; grid-template-columns: 1fr; gap: 6px; }
+  .opt-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 2px solid #ffd6ea;
+    border-radius: 12px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    transition: transform .12s, background .15s, border-color .15s, box-shadow .15s;
+    text-align: left;
+  }
+  .opt-btn:hover:not(:disabled) { transform: translateX(3px); background: #fff4fa; border-color: #ffa8d2; }
+  .opt-btn.active {
+    background: linear-gradient(90deg, #ff7cbc, #ff4fa3);
+    border-color: var(--pink-dark);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(255, 79, 163, .35);
+  }
+  .opt-btn.active:hover:not(:disabled) { background: linear-gradient(90deg, #ff7cbc, #ff4fa3); border-color: var(--pink-dark); }
+  .opt-btn:disabled { opacity: .55; cursor: not-allowed; }
+  .swatch {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.9);
+    box-shadow: 0 0 0 1px rgba(0,0,0,.12);
+    flex-shrink: 0;
+  }
+  .action-row { display: flex; gap: 8px; }
+  .btn {
+    font-family: inherit;
+    font-weight: 800;
+    border: none;
+    cursor: pointer;
+    border-radius: 999px;
+    transition: transform .12s, box-shadow .15s, opacity .15s;
+  }
+  .btn:hover:not(:disabled) { transform: translateY(-2px) scale(1.02); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-random {
+    flex: 1;
+    padding: 10px;
+    font-size: 14px;
+    background: #fff;
+    color: var(--purple);
+    border: 2px solid #dcc7ff;
+  }
+  .btn-start {
+    width: 100%;
+    padding: 16px;
+    font-size: 18px;
+    color: #fff;
+    background: linear-gradient(90deg, #ff4fa3, #a46bff);
+    box-shadow: 0 6px 18px rgba(164, 107, 255, .4);
+    letter-spacing: .5px;
+    animation: btnGlow 2s ease-in-out infinite;
+  }
+  .btn-start:disabled { animation: none; }
+  @keyframes btnGlow {
+    0%,100% { box-shadow: 0 6px 18px rgba(164,107,255,.4); }
+    50% { box-shadow: 0 6px 26px rgba(255,79,163,.7); }
+  }
+
+  /* ---------------- STAGE ---------------- */
+  .stage {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 50% 20%, #6b2b8f 0%, #3a1356 55%, #220a35 100%);
+  }
+  .backwall {
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 34%;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 22px, rgba(0,0,0,.08) 22px 44px),
+      linear-gradient(180deg, #ff6fb7 0%, #d63f8e 100%);
+    border-bottom: 6px solid #ffd1ea;
+    box-shadow: inset 0 -30px 50px rgba(0,0,0,.25);
+  }
+  .bulb-row {
+    position: absolute; left: 0; right: 0; top: 10px;
+    display: flex; justify-content: space-around;
+  }
+  .bulb-row span {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #fff6c2;
+    box-shadow: 0 0 10px 3px #ffe97a;
+    animation: twinkle 1.4s ease-in-out infinite;
+  }
+  .bulb-row span:nth-child(even) { animation-delay: .7s; }
+  @keyframes twinkle { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+  .sign {
+    position: absolute;
+    top: 13%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Pacifico', cursive;
+    font-size: clamp(26px, 4vw, 52px);
+    color: #fff;
+    text-shadow: 0 0 8px #fff, 0 0 18px #ff9ad0, 0 0 34px #ff4fa3;
+    white-space: nowrap;
+    animation: neon 3s ease-in-out infinite;
+  }
+  @keyframes neon { 0%,100% { opacity: 1; } 47% { opacity: 1; } 49% { opacity: .6; } 51% { opacity: 1; } }
+
+  .spot {
+    position: absolute;
+    top: -10%;
+    width: 38%;
+    height: 120%;
+    background: linear-gradient(180deg, rgba(255,255,230,.35), rgba(255,255,230,0) 85%);
+    clip-path: polygon(45% 0, 55% 0, 100% 100%, 0 100%);
+    mix-blend-mode: screen;
+    pointer-events: none;
+    z-index: 3;
+    transform-origin: 50% 0;
+  }
+  .spot-l { left: 6%; animation: sweepL 6s ease-in-out infinite; }
+  .spot-r { right: 6%; animation: sweepR 6s ease-in-out infinite; }
+  @keyframes sweepL { 0%,100% { transform: rotate(-18deg); } 50% { transform: rotate(-4deg); } }
+  @keyframes sweepR { 0%,100% { transform: rotate(18deg); } 50% { transform: rotate(4deg); } }
+
+  .runway {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 66%;
+    clip-path: polygon(40% 0, 60% 0, 92% 100%, 8% 100%);
+    background:
+      radial-gradient(circle, rgba(255,255,255,.95) 0 1px, transparent 1.6px) 0 0 / 17px 17px,
+      radial-gradient(circle, rgba(255,240,170,.9) 0 1px, transparent 1.6px) 8px 6px / 23px 23px,
+      radial-gradient(circle, rgba(255,200,240,.9) 0 1.2px, transparent 1.8px) 4px 12px / 31px 31px,
+      linear-gradient(180deg, #ffb3d9 0%, #ff7cbc 50%, #ff4fa3 100%);
+    animation: glitter 1.6s linear infinite;
+    z-index: 1;
+  }
+  .runway::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent 0 49.4%, rgba(255,255,255,.55) 49.4% 50.6%, transparent 50.6%);
+  }
+  @keyframes glitter {
+    0% { background-position: 0 0, 8px 6px, 4px 12px, 0 0; filter: brightness(1); }
+    50% { filter: brightness(1.12); }
+    100% { background-position: 0 17px, 8px 29px, 4px 43px, 0 0; filter: brightness(1); }
+  }
+  .runway-edge {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 66%;
+    z-index: 0;
+    clip-path: polygon(39.3% 0, 60.7% 0, 93.5% 100%, 6.5% 100%);
+    background: linear-gradient(180deg, #fff 0%, #ffe3f2 100%);
+    filter: drop-shadow(0 0 12px #fff);
+  }
+
+  .crowd {
+    position: absolute;
+    bottom: 0;
+    width: 22%;
+    height: 32%;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .crowd-l { left: 0; }
+  .crowd-r { right: 0; }
+  .fan {
+    position: absolute;
+    bottom: 0;
+    width: 46px;
+  }
+  .fan .head {
+    width: 30px; height: 30px; border-radius: 50%;
+    margin: 0 auto;
+    background: var(--c);
+  }
+  .fan .body {
+    width: 46px; height: 40px;
+    border-radius: 22px 22px 0 0;
+    margin-top: 2px;
+    background: var(--c);
+  }
+  .fan .cam {
+    position: absolute;
+    top: 20px; left: 50%;
+    width: 22px; height: 14px;
+    margin-left: -11px;
+    background: #222;
+    border-radius: 3px;
+    border: 2px solid #555;
+  }
+  .fan .cam::after {
+    content: ""; position: absolute;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #6af; left: 6px; top: 2px;
+  }
+
+  .flash-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+  .flash-layer.front { z-index: 6; }
+  .flash {
+    position: absolute;
+    width: var(--s, 40px);
+    height: var(--s, 40px);
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0 32%, rgba(255,255,255,.75) 48%, rgba(255,255,255,0) 72%);
+    box-shadow: 0 0 30px 10px rgba(255,255,255,.75);
+    transform: translate(-50%, -50%) scale(.2);
+    animation: pop .6s ease-out forwards;
+  }
+  .flash::before, .flash::after {
+    content: "";
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 220%; height: 3px;
+    background: linear-gradient(90deg, transparent, #fff, transparent);
+    transform: translate(-50%, -50%);
+  }
+  .flash::after { transform: translate(-50%, -50%) rotate(90deg); }
+  @keyframes pop {
+    0% { transform: translate(-50%, -50%) scale(.2); opacity: 1; }
+    30% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+  }
+  .white-out {
+    position: absolute; inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 9;
+  }
+  .white-out.go { animation: whiteout .35s ease-out; }
+  @keyframes whiteout { 0% { opacity: .75; } 100% { opacity: 0; } }
+
+  /* ---------------- MODEL ---------------- */
+  .model-wrap {
+    position: absolute;
+    left: 50%;
+    bottom: 3%;
+    height: 74%;
+    aspect-ratio: 200 / 360;
+    transform: translateX(-50%);
+    transform-origin: 50% 100%;
+    z-index: 4;
+  }
+  .model-wrap.walk { animation: walkForward 5s cubic-bezier(.35,.1,.45,1) forwards; }
+  @keyframes walkForward {
+    0% { transform: translate(-50%, -84%) scale(.42); opacity: 0; }
+    6% { opacity: 1; }
+    100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  }
+  .model-bob { width: 100%; height: 100%; }
+  #doll { width: 100%; height: 100%; overflow: visible; display: block; }
+  #doll.pop { animation: dollPop .35s ease-out; }
+  @keyframes dollPop { 0% { transform: scale(1); } 40% { transform: scale(1.04) rotate(-1deg); } 100% { transform: scale(1); } }
+
+  /* idle breathing */
+  #doll .breathe { animation: breathe 3s ease-in-out infinite; transform-origin: 100px 340px; }
+  @keyframes breathe { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(1.008); } }
+
+  #legL { transform-origin: 93px 172px; }
+  #legR { transform-origin: 107px 172px; }
+  #armR { transform-origin: 123px 114px; }
+  #hairBack { transform-origin: 100px 50px; }
+  #skirt { transform-origin: 100px 165px; }
+
+  .walking .model-bob, .model-wrap.walk .model-bob { animation: bob .5s ease-in-out infinite; }
+  @keyframes bob {
+    0%,100% { transform: translateY(0) rotate(-1.5deg); }
+    50% { transform: translateY(-2.5%) rotate(1.5deg); }
+  }
+  #doll.walking #legL { animation: stepL .5s ease-in-out infinite; }
+  #doll.walking #legR { animation: stepR .5s ease-in-out infinite; }
+  #doll.walking #hairBack { animation: hairSway .5s ease-in-out infinite; }
+  #doll.walking #skirt { animation: skirtSway .5s ease-in-out infinite; }
+  #doll.walking #armR { animation: armSwing 1s ease-in-out infinite; }
+  @keyframes stepL { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px) rotate(3deg); } }
+  @keyframes stepR { 0%,100% { transform: translateY(-9px) rotate(-3deg); } 50% { transform: translateY(0); } }
+  @keyframes hairSway { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+  @keyframes skirtSway { 0%,100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+  @keyframes armSwing { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-8deg); } }
+
+  #doll.posing #armR { animation: wave .45s ease-in-out 4 alternate; }
+  #doll.posing #hairBack { animation: hairFlip .8s ease-out; }
+  @keyframes wave { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+  @keyframes hairFlip { 0% { transform: rotate(0); } 40% { transform: rotate(8deg); } 70% { transform: rotate(-4deg); } 100% { transform: rotate(0); } }
+
+  .caption {
+    position: absolute;
+    top: calc(34% + 14px);
+    left: 14px;
+    background: rgba(255,255,255,.92);
+    color: var(--pink-dark);
+    font-weight: 800;
+    font-size: 14px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
+    white-space: nowrap;
+    z-index: 7;
+    opacity: 0;
+    transition: opacity .4s, transform .4s;
+    max-width: 34%;
+    white-space: normal;
+    border-radius: 16px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .caption.show { opacity: 1; transform: translateY(-4px); }
+
+  .hint {
+    position: absolute;
+    right: 14px; bottom: 12px;
+    color: rgba(255,255,255,.75);
+    font-size: 12px;
+    z-index: 7;
+  }
+
+  /* ---------------- SCORECARD ---------------- */
+  .scorecard {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(40, 8, 52, .55);
+    backdrop-filter: blur(3px);
+    padding: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .35s;
+  }
+  .scorecard.show { opacity: 1; pointer-events: auto; }
+  .score-panel {
+    background: #fff;
+    border-radius: 26px;
+    padding: 22px 22px 18px;
+    width: min(720px, 100%);
+    max-height: 100%;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+    border: 4px solid #ffc2e0;
+    transform: scale(.85);
+    transition: transform .4s cubic-bezier(.2,1.4,.4,1);
+    text-align: center;
+  }
+  .scorecard.show .score-panel { transform: scale(1); }
+  .score-panel h2 {
+    font-family: 'Pacifico', cursive;
+    font-weight: 400;
+    color: var(--pink);
+    font-size: 32px;
+  }
+  .outfit-line { font-size: 13px; color: #9a6a91; margin: 2px 0 14px; }
+  .judges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .judge {
+    background: linear-gradient(180deg, #fff6fb, #ffe6f3);
+    border: 2px solid #ffd0e7;
+    border-radius: 18px;
+    padding: 14px 10px;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity .4s, transform .4s;
+  }
+  .judge.in { opacity: 1; transform: translateY(0); }
+  .judge .avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    margin: 0 auto 6px;
+    display: grid; place-items: center;
+    font-size: 30px;
+    background: #fff;
+    box-shadow: 0 3px 10px rgba(255,79,163,.25);
+  }
+  .judge .name { font-weight: 800; font-size: 14px; }
+  .judge .role { font-size: 11px; color: #a77a9f; margin-bottom: 6px; }
+  .judge .score { font-size: 38px; font-weight: 800; color: var(--pink-dark); line-height: 1.1; }
+  .judge .score small { font-size: 16px; color: #c79abd; }
+  .hearts { font-size: 11px; letter-spacing: 1px; margin: 4px 0 6px; }
+  .judge .comment { font-size: 12.5px; font-style: italic; color: #6d4269; min-height: 36px; }
+  .total-box { margin-top: 16px; opacity: 0; transition: opacity .5s; }
+  .total-box.in { opacity: 1; }
+  .total { font-size: 22px; font-weight: 800; }
+  .total span { color: var(--pink-dark); }
+  .rank {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #ffe066, #ffb3d9);
+    font-weight: 800;
+  }
+  .notes { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  .note {
+    font-size: 12px; font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #f1e7ff; color: #6a3fb8;
+  }
+  .note.bad { background: #ffe9e4; color: #c0422b; }
+  .score-actions { margin-top: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .score-actions .btn { padding: 12px 22px; font-size: 15px; }
+  .btn-pink { background: linear-gradient(90deg, #ff4fa3, #ff7cbc); color: #fff; }
+  .btn-purple { background: linear-gradient(90deg, #a46bff, #c79bff); color: #fff; }
+
+  .confetti {
+    position: absolute;
+    top: -20px;
+    width: 10px; height: 14px;
+    z-index: 11;
+    pointer-events: none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    to { transform: translateY(110vh) rotate(720deg); }
+  }
+
+  /* ---------------- RESPONSIVE ---------------- */
+  @media (max-width: 820px) {
+    body { overflow: auto; }
+    .app { flex-direction: column-reverse; height: auto; }
+    .stage { height: 72vh; min-height: 460px; flex: none; }
+    .sidebar { width: 100%; border-right: none; border-top: 4px solid #ffc2e0; overflow: visible; padding: 16px; }
+    .options { grid-template-columns: 1fr 1fr 1fr; }
+    .opt-btn { flex-direction: column; text-align: center; font-size: 12px; gap: 4px; padding: 8px 4px; }
+    .judges { grid-template-columns: 1fr; }
+    .crowd { width: 26%; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ DRESSING ROOM ============ -->
+  <aside class="sidebar">
+    <h1>Dressing Room</h1>
+    <p class="subtitle">Style your doll, then strut the runway!</p>
+    <div id="categories"></div>
+    <div class="action-row">
+      <button class="btn btn-random" id="randomBtn">🎲 Surprise Me!</button>
+    </div>
+    <button class="btn btn-start" id="startBtn">✨ Start Runway Show ✨</button>
+  </aside>
+
+  <!-- ============ STAGE ============ -->
+  <main class="stage" id="stage">
+    <div class="backwall">
+      <div class="bulb-row" id="bulbRow"></div>
+      <div class="sign">✨ Glam Runway ✨</div>
+    </div>
+    <div class="flash-layer" id="flashBack"></div>
+    <div class="runway-edge"></div>
+    <div class="runway"></div>
+    <div class="spot spot-l"></div>
+    <div class="spot spot-r"></div>
+    <div class="crowd crowd-l" id="crowdL"></div>
+    <div class="crowd crowd-r" id="crowdR"></div>
+
+    <div class="model-wrap" id="modelWrap">
+      <div class="model-bob">
+        <svg id="doll" viewBox="0 0 200 360" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="pGlitter" width="8" height="8" patternUnits="userSpaceOnUse">
+              <rect width="8" height="8" fill="#ff4fa3"/>
+              <circle cx="2" cy="2" r=".9" fill="#fff"/>
+              <circle cx="6" cy="5" r=".7" fill="#ffd6ec"/>
+              <circle cx="4" cy="7" r=".5" fill="#fff" opacity=".8"/>
+              <circle cx="7" cy="1" r=".4" fill="#ffe97a"/>
+            </pattern>
+            <pattern id="pRib" width="3" height="3" patternUnits="userSpaceOnUse">
+              <rect width="3" height="3" fill="#ffffff"/>
+              <rect width="1" height="3" fill="#ebe4ee"/>
+            </pattern>
+            <linearGradient id="gNeon" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#9bff4a"/>
+              <stop offset="1" stop-color="#2cf26a"/>
+            </linearGradient>
+            <pattern id="pPlaid" width="14" height="14" patternUnits="userSpaceOnUse">
+              <rect width="14" height="14" fill="#d8344f"/>
+              <rect x="0" y="5" width="14" height="4" fill="#1f2a5c" opacity=".55"/>
+              <rect x="5" y="0" width="4" height="14" fill="#1f2a5c" opacity=".55"/>
+              <rect x="0" y="11.5" width="14" height="1" fill="#ffd54a" opacity=".85"/>
+              <rect x="11.5" y="0" width="1" height="14" fill="#ffd54a" opacity=".85"/>
+            </pattern>
+            <pattern id="pDenim" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <rect width="4" height="4" fill="#4f7fbf"/>
+              <rect width="2" height="4" fill="#6190d1"/>
+            </pattern>
+            <linearGradient id="gPastel" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ffd3e6"/>
+              <stop offset="1" stop-color="#ffb3d4"/>
+            </linearGradient>
+            <linearGradient id="gHair" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ffe98a"/>
+              <stop offset="1" stop-color="#f5c94e"/>
+            </linearGradient>
+          </defs>
+
+          <g class="breathe">
+            <ellipse cx="100" cy="350" rx="34" ry="5" fill="rgba(0,0,0,.18)"/>
+            <g id="hairBack"></g>
+
+            <!-- legs + shoes -->
+            <g id="legL">
+              <path d="M86 168 L100 168 L97 250 L95 337 L88 337 L86 250 Z" fill="#fcd9c0" stroke="#efbf9f" stroke-width=".8"/>
+              <g id="shoeL"></g>
+            </g>
+            <g id="legR">
+              <path d="M100 168 L114 168 L114 250 L112 337 L105 337 L103 250 Z" fill="#fcd9c0" stroke="#efbf9f" stroke-width=".8"/>
+              <g id="shoeR"></g>
+            </g>
+
+            <!-- neck & torso -->
+            <rect x="94" y="88" width="12" height="26" rx="4" fill="#fcd9c0"/>
+            <path d="M78 112 Q100 104 122 112 L120 135 Q112 150 112 170 L88 170 Q88 150 80 135 Z" fill="#fcd9c0" stroke="#efbf9f" stroke-width=".8"/>
+            <circle cx="100" cy="160" r="1.2" fill="#e8a988"/>
+
+            <g id="skirt"></g>
+
+            <!-- arms -->
+            <g id="armL">
+              <path d="M77 115 L60 147 L84 166" fill="none" stroke="#fcd9c0" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="85" cy="167" r="5" fill="#fcd9c0"/>
+            </g>
+            <g id="armR">
+              <path d="M123 114 L140 88 L146 62" fill="none" stroke="#fcd9c0" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <ellipse cx="146.5" cy="57" rx="5.5" ry="6.5" fill="#fcd9c0"/>
+              <path d="M143 52 L142 48 M146 51 L146 47 M149 52 L150 48" stroke="#fcd9c0" stroke-width="2.4" stroke-linecap="round"/>
+              <circle cx="146.5" cy="50.5" r="1" fill="#ff4fa3"/>
+            </g>
+
+            <g id="top"></g>
+
+            <!-- head & face -->
+            <ellipse cx="100" cy="68" rx="25" ry="29" fill="#fcd9c0" stroke="#efbf9f" stroke-width=".8"/>
+            <g id="face">
+              <path d="M84 62 Q90 58.5 95 61.5" stroke="#c9962f" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+              <path d="M105 61.5 Q110 58.5 116 62" stroke="#c9962f" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+              <ellipse cx="90" cy="70" rx="5" ry="6" fill="#fff"/>
+              <ellipse cx="110" cy="70" rx="5" ry="6" fill="#fff"/>
+              <circle cx="90" cy="71" r="3.7" fill="#3a8dde"/>
+              <circle cx="110" cy="71" r="3.7" fill="#3a8dde"/>
+              <circle cx="90" cy="71" r="1.7" fill="#1b2a4a"/>
+              <circle cx="110" cy="71" r="1.7" fill="#1b2a4a"/>
+              <circle cx="91.3" cy="69.5" r="1.1" fill="#fff"/>
+              <circle cx="111.3" cy="69.5" r="1.1" fill="#fff"/>
+              <path d="M84.5 67 Q90 62.5 95.5 67" stroke="#2d1b2b" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+              <path d="M104.5 67 Q110 62.5 115.5 67" stroke="#2d1b2b" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+              <path d="M84.5 67 L82.5 65 M86 65.3 L84.6 63 M115.5 67 L117.5 65 M114 65.3 L115.4 63" stroke="#2d1b2b" stroke-width="1.1" stroke-linecap="round"/>
+              <path d="M100 74 Q98 79 101 80" stroke="#e0a98a" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+              <circle cx="84" cy="81" r="4.5" fill="#ff8fc0" opacity=".5"/>
+              <circle cx="116" cy="81" r="4.5" fill="#ff8fc0" opacity=".5"/>
+              <path d="M93.5 85 Q97 82.6 100 84.4 Q103 82.6 106.5 85 Q100 92 93.5 85 Z" fill="#ff3d8b"/>
+              <path d="M96 86.3 Q100 88 104 86.3" stroke="#fff" stroke-width=".7" fill="none" opacity=".7"/>
+            </g>
+            <g id="hairFront"></g>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="flash-layer front" id="flashFront"></div>
+    <div class="caption" id="caption"></div>
+    <div class="hint" id="hint">Pick an outfit, then hit “Start Runway Show”!</div>
+    <div class="white-out" id="whiteOut"></div>
+
+    <div class="scorecard" id="scorecard">
+      <div class="score-panel">
+        <h2>Judges' Scorecard</h2>
+        <div class="outfit-line" id="outfitLine"></div>
+        <div class="judges" id="judges"></div>
+        <div class="total-box" id="totalBox">
+          <div class="total">Total: <span id="totalScore">0</span> / 30</div>
+          <div class="rank" id="rank"></div>
+          <div class="notes" id="notes"></div>
+        </div>
+        <div class="score-actions">
+          <button class="btn btn-pink" id="restyleBtn">💄 Restyle Outfit</button>
+          <button class="btn btn-purple" id="againBtn">🔁 Walk Again</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* =========================================================
+   WARDROBE DATA
+   cute / style: base ratings (1-10)
+   vibes: tags used for outfit harmony + judge preferences
+   ========================================================= */
+const CATALOG = {
+  hair: {
+    label: '💇‍♀️ Hairstyles',
+    items: {
+      ponytail: { name: 'High Ponytail', swatch: 'linear-gradient(135deg,#ffe98a,#ff7cbc)', cute: 8, style: 7, vibes: ['sporty', 'cute'] },
+      bob:      { name: 'Bob Cut',       swatch: 'linear-gradient(135deg,#ffe98a,#f5c94e)', cute: 7, style: 9, vibes: ['edgy', 'classic'] },
+      waves:    { name: 'Long Waves',    swatch: 'linear-gradient(135deg,#fff3b0,#f5c94e)', cute: 9, style: 8, vibes: ['glam', 'cute'] }
+    }
+  },
+  top: {
+    label: '👚 Crop Tops',
+    items: {
+      pinkGlitter: { name: 'Pink Glitter Top',  swatch: 'radial-gradient(circle at 30% 30%,#fff 0 8%,#ff4fa3 12%)', cute: 9, style: 8, vibes: ['glam', 'pink'] },
+      whiteTee:    { name: 'White Ribbed Tee',  swatch: 'repeating-linear-gradient(90deg,#fff 0 3px,#e6dde9 3px 4px)', cute: 7, style: 8, vibes: ['classic', 'sporty'] },
+      neonGreen:   { name: 'Neon Green Crop',   swatch: 'linear-gradient(135deg,#9bff4a,#2cf26a)', cute: 6, style: 8, vibes: ['edgy', 'sporty'] }
+    }
+  },
+  skirt: {
+    label: '👗 Pleated Skirts',
+    items: {
+      plaid:      { name: 'Classic Plaid Skirt',    swatch: 'repeating-linear-gradient(0deg,#d8344f 0 4px,#1f2a5c 4px 6px),#d8344f', cute: 8, style: 9, vibes: ['classic', 'edgy'] },
+      pastelPink: { name: 'Pastel Pink Pleated',    swatch: 'linear-gradient(135deg,#ffd3e6,#ffb3d4)', cute: 10, style: 7, vibes: ['pink', 'cute', 'glam'] },
+      denim:      { name: 'Denim Skirt',            swatch: 'linear-gradient(135deg,#6190d1,#3d6aa8)', cute: 7, style: 8, vibes: ['sporty', 'edgy'] }
+    }
+  },
+  shoes: {
+    label: '👠 Shoes',
+    items: {
+      sneakers: { name: 'White Sneakers',  swatch: 'linear-gradient(135deg,#fff 60%,#ff8cc6 60%)', cute: 7, style: 7, vibes: ['sporty', 'cute'] },
+      heels:    { name: 'Pink High Heels', swatch: 'linear-gradient(135deg,#ff2d95,#ff7cbc)', cute: 9, style: 9, vibes: ['glam', 'pink'] },
+      boots:    { name: 'Cute Boots',      swatch: 'linear-gradient(135deg,#f7a8c8,#fff 85%)', cute: 8, style: 9, vibes: ['edgy', 'classic', 'cute'] }
+    }
+  }
+};
+
+const state = { hair: 'waves', top: 'pinkGlitter', skirt: 'pastelPink', shoes: 'heels' };
+
+/* =========================================================
+   SVG DRAWING — HAIR
+   ========================================================= */
+const HAIR_FILL = 'fill="url(#gHair)" stroke="#e0b13c" stroke-width="1.2" stroke-linejoin="round"';
+const HAIR_SHINE = 'fill="none" stroke="#fff6c4" stroke-width="2" stroke-linecap="round" opacity=".85"';
+
+const HAIR = {
+  waves: {
+    back: `
+      <path ${HAIR_FILL} d="M72 58 C62 90 70 110 64 135 C58 160 72 175 66 200 C80 214 92 206 100 210
+        C108 206 120 214 134 200 C128 175 142 160 136 135 C130 110 138 90 128 58 C120 30 80 30 72 58 Z"/>
+      <path ${HAIR_SHINE} d="M76 80 C70 110 80 140 72 185"/>
+      <path ${HAIR_SHINE} d="M124 80 C130 110 120 140 128 185"/>
+      <path fill="none" stroke="#e0b13c" stroke-width="1" d="M88 120 C84 150 92 170 86 200 M112 120 C116 150 108 170 114 200"/>`,
+    front: `
+      <path ${HAIR_FILL} d="M73 74 C68 40 88 32 102 33 C122 33 132 46 127 76 C122 58 114 50 104 48 C97 60 86 66 73 74 Z"/>
+      <path ${HAIR_FILL} d="M74 62 C66 90 80 110 72 135 C70 146 76 154 81 151 C85 130 78 110 82 90 C83 78 80 68 78 62 Z"/>
+      <path ${HAIR_FILL} d="M126 62 C134 90 120 110 128 135 C130 146 124 154 119 151 C115 130 122 110 118 90 C117 78 120 68 122 62 Z"/>
+      <path ${HAIR_SHINE} d="M86 40 C96 36 110 37 118 44"/>`
+  },
+  ponytail: {
+    back: `
+      <path ${HAIR_FILL} d="M96 34 C120 8 158 28 149 72 C143 104 154 128 138 162 C135 134 127 112 130 84 C132 62 120 46 100 44 Z"/>
+      <path ${HAIR_SHINE} d="M132 32 C148 56 136 100 142 140"/>
+      <path ${HAIR_FILL} d="M74 66 C74 38 126 38 126 66 Z"/>`,
+    front: `
+      <path ${HAIR_FILL} d="M74 72 C69 36 131 36 126 72 C121 53 110 47 100 47 C88 47 78 54 74 72 Z"/>
+      <path ${HAIR_SHINE} d="M84 44 C94 39 108 39 117 45"/>
+      <ellipse cx="100" cy="35" rx="10" ry="5.5" fill="#ff4fa3" stroke="#d1006b" stroke-width="1"/>
+      <circle cx="93" cy="35" r="2" fill="#ff8cc6"/><circle cx="100" cy="33" r="2" fill="#ff8cc6"/><circle cx="107" cy="35" r="2" fill="#ff8cc6"/>`
+  },
+  bob: {
+    back: `
+      <path ${HAIR_FILL} d="M70 66 C66 28 134 28 130 66 L133 102 C120 109 80 109 67 102 Z"/>`,
+    front: `
+      <path ${HAIR_FILL} d="M73 70 C70 33 130 33 127 70 L127 58 C110 53 90 53 73 58 Z"/>
+      <path ${HAIR_FILL} d="M69 57 L80 57 C77 76 78 90 82 104 L66 101 Z"/>
+      <path ${HAIR_FILL} d="M131 57 L120 57 C123 76 122 90 118 104 L134 101 Z"/>
+      <path d="M90 55 L90 58 M100 54 L100 57.5 M110 55 L110 58" stroke="#e0b13c" stroke-width=".9"/>
+      <path ${HAIR_SHINE} d="M82 42 C92 37 108 37 118 42"/>
+      <path d="M74 52 C80 34 120 34 126 52" fill="none" stroke="#ff4fa3" stroke-width="4" stroke-linecap="round"/>
+      <path d="M116 40 L110 35 L111 44 Z M116 40 L122 35 L121 44 Z" fill="#ff4fa3" stroke="#d1006b" stroke-width=".8"/>
+      <circle cx="116" cy="40" r="2.2" fill="#ff8cc6" stroke="#d1006b" stroke-width=".6"/>`
+  }
+};
+
+/* =========================================================
+   SVG DRAWING — TOPS
+   ========================================================= */
+const TOP_SHAPE = 'M76 111 L91 107 Q100 120 109 107 L124 111 L122 134 Q119 144 118 151 L82 151 Q81 144 78 134 Z';
+
+function sparkle(x, y, s, delay) {
+  return `<path d="M${x} ${y - s} L${x + s * .25} ${y - s * .25} L${x + s} ${y} L${x + s * .25} ${y + s * .25}
+    L${x} ${y + s} L${x - s * .25} ${y + s * .25} L${x - s} ${y} L${x - s * .25} ${y - s * .25} Z" fill="#fff">
+    <animate attributeName="opacity" values="0;1;0" dur="1.3s" begin="${delay}s" repeatCount="indefinite"/></path>`;
+}
+
+const TOPS = {
+  pinkGlitter: `
+    <path d="${TOP_SHAPE}" fill="url(#pGlitter)" stroke="#d1006b" stroke-width="1"/>
+    <path d="M82 148 L118 148" stroke="#ff9ad0" stroke-width="3"/>
+    ${sparkle(88, 125, 3.5, 0)}${sparkle(112, 132, 3, .45)}${sparkle(101, 141, 2.6, .9)}
+    <path d="M100 121 L95 117 L95 125 Z M100 121 L105 117 L105 125 Z" fill="#fff" stroke="#ffb3d9" stroke-width=".6"/>
+    <circle cx="100" cy="121" r="1.6" fill="#ffd6ec"/>`,
+  whiteTee: `
+    <polygon points="71.7,112.2 82.3,117.8 76.7,128.4 66.1,122.8" fill="url(#pRib)" stroke="#d8cfdc" stroke-width="1"/>
+    <polygon points="118,110.7 128,117.3 134.6,107.3 124.6,100.7" fill="url(#pRib)" stroke="#d8cfdc" stroke-width="1"/>
+    <path d="${TOP_SHAPE}" fill="url(#pRib)" stroke="#d8cfdc" stroke-width="1"/>
+    <path d="M91 107 Q100 120 109 107" fill="none" stroke="#e7dde9" stroke-width="2.4"/>
+    <path d="M82 149 L118 149" stroke="#eee6f0" stroke-width="3"/>
+    <path d="M96 132 C94 129 98 127 100 130 C102 127 106 129 104 132 L100 136 Z" fill="#ff7cbc"/>`,
+  neonGreen: `
+    <path d="${TOP_SHAPE}" fill="url(#gNeon)" stroke="#16b84a" stroke-width="1"/>
+    <path d="M91 107 Q100 120 109 107" fill="none" stroke="#16b84a" stroke-width="2"/>
+    <path d="M82 147 L118 147" stroke="#16b84a" stroke-width="4"/>
+    <path d="M86 128 L114 128" stroke="#fff" stroke-width="1.2" stroke-dasharray="2 2" opacity=".8"/>
+    <text x="100" y="140" text-anchor="middle" font-size="8" font-weight="800" fill="#0d6b2c" font-family="Poppins, sans-serif">★ ★ ★</text>`
+};
+
+/* =========================================================
+   SVG DRAWING — PLEATED SKIRTS
+   ========================================================= */
+function pleatedSkirt(fill, stroke, bandFill, extras = '') {
+  const n = 8;
+  const waist = [], hem = [];
+  for (let i = 0; i <= n; i++) {
+    waist.push([86 + i * (28 / n), 166]);
+    hem.push([66 + i * (68 / n), i % 2 === 0 ? 223 : 219]);
+  }
+  let d = `M${waist[0][0]} ${waist[0][1]} L${waist[n][0]} ${waist[n][1]}`;
+  for (let i = n; i >= 0; i--) d += ` L${hem[i][0]} ${hem[i][1]}`;
+  d += ' Z';
+  let panels = '';
+  let lines = '';
+  for (let i = 0; i < n; i++) {
+    if (i % 2 === 1) {
+      panels += `<polygon points="${waist[i]} ${waist[i + 1]} ${hem[i + 1]} ${hem[i]}" fill="rgba(0,0,0,.12)"/>`;
+    }
+    if (i > 0) lines += `<line x1="${waist[i][0]}" y1="${waist[i][1]}" x2="${hem[i][0]}" y2="${hem[i][1]}" stroke="${stroke}" stroke-width=".7" opacity=".7"/>`;
+  }
+  return `
+    <path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="1" stroke-linejoin="round"/>
+    ${panels}${lines}
+    <rect x="85" y="161" width="30" height="7" rx="2" fill="${bandFill}" stroke="${stroke}" stroke-width=".8"/>
+    ${extras}`;
+}
+
+const SKIRTS = {
+  plaid: () => pleatedSkirt('url(#pPlaid)', '#7a1328', '#1f2a5c',
+    `<rect x="108" y="170" width="3" height="12" rx="1" fill="#ffd54a" stroke="#b08a1a" stroke-width=".4"/>`),
+  pastelPink: () => pleatedSkirt('url(#gPastel)', '#ff8cc0', '#ff9ccb',
+    `<path d="M100 164.5 L94 161 L94 168 Z M100 164.5 L106 161 L106 168 Z" fill="#fff" stroke="#ff8cc0" stroke-width=".6"/>
+     <circle cx="100" cy="164.5" r="1.5" fill="#ff8cc0"/>`),
+  denim: () => pleatedSkirt('url(#pDenim)', '#2e548c', '#3d6aa8',
+    `<circle cx="100" cy="164.5" r="2" fill="#d8b04a" stroke="#8a6a12" stroke-width=".5"/>
+     <path d="M86 168.5 L114 168.5" stroke="#f0b04a" stroke-width=".7" stroke-dasharray="1.5 1.2"/>
+     <path d="M70 214 L130 214" stroke="#f0b04a" stroke-width=".7" stroke-dasharray="1.5 1.2"/>`)
+};
+
+/* =========================================================
+   SVG DRAWING — SHOES (cx = foot center, side = -1 left / 1 right)
+   ========================================================= */
+const SHOES = {
+  sneakers: (cx, side) => `
+    <rect x="${cx - 6}" y="324" width="12" height="6" rx="2" fill="#fff" stroke="#e3dbe6" stroke-width=".6"/>
+    <path d="M${cx - 6} 326.5 L${cx + 6} 326.5" stroke="#ff8cc6" stroke-width="1.2"/>
+    <path d="M${cx - 7} 329 Q${cx - 10} 344 ${cx - 9} 346 L${cx + 9} 346 Q${cx + 10} 344 ${cx + 7} 329 Z" fill="#fff" stroke="#d9d0dc" stroke-width="1"/>
+    <rect x="${cx - 10.5}" y="343" width="21" height="5" rx="2.5" fill="#ff8cc6" stroke="#e86aa8" stroke-width=".6"/>
+    <path d="M${cx - 4} 333 L${cx + 4} 333 M${cx - 4.5} 336.5 L${cx + 4.5} 336.5 M${cx - 5} 340 L${cx + 5} 340" stroke="#ffb3d9" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M${cx + side * 3} 342 Q${cx + side * 7} 340 ${cx + side * 8.5} 335" stroke="#ff4fa3" stroke-width="1.4" fill="none" stroke-linecap="round"/>`,
+  heels: (cx, side) => `
+    <rect x="${cx + side * 5.5 - 1.3}" y="333" width="2.6" height="16" rx="1" fill="#c4006a"/>
+    <path d="M${cx - 6.5} 330 Q${cx - 9} 341 ${cx} 352 Q${cx + 9} 341 ${cx + 6.5} 330 Q${cx} 335 ${cx - 6.5} 330 Z" fill="#ff2d95" stroke="#c4006a" stroke-width="1"/>
+    <path d="M${cx - 6.5} 328 L${cx + 6.5} 328" stroke="#ff2d95" stroke-width="2" stroke-linecap="round"/>
+    <path d="M${cx - 3} 337 Q${cx - 4} 343 ${cx - 1} 347" stroke="#fff" stroke-width="1.1" fill="none" opacity=".7" stroke-linecap="round"/>
+    <path d="M${cx} 333 L${cx - 3.5} 331 L${cx - 3.5} 335 Z M${cx} 333 L${cx + 3.5} 331 L${cx + 3.5} 335 Z" fill="#ffd6ec"/>
+    <circle cx="${cx}" cy="333" r="1.1" fill="#fff"/>`,
+  boots: (cx, side) => {
+    let fur = '';
+    for (let k = -8; k <= 8; k += 4) fur += `<circle cx="${cx + k}" cy="289" r="3.4" fill="#fff" stroke="#f0dde8" stroke-width=".6"/>`;
+    return `
+    <path d="M${cx - 8} 289 L${cx + 8} 289 L${cx + 7.5} 336 Q${cx + 11} 347 ${cx + 3} 349 L${cx - 6} 349 Q${cx - 11} 347 ${cx - 7.5} 336 Z" fill="#f7a8c8" stroke="#d45f92" stroke-width="1"/>
+    <rect x="${cx - 6}" y="348" width="12" height="3.5" rx="1" fill="#b84a7a"/>
+    <path d="M${cx - 2.5} 312 C${cx - 5} 309 ${cx - 2} 306 ${cx} 309 C${cx + 2} 306 ${cx + 5} 309 ${cx + 2.5} 312 L${cx} 315 Z" fill="#fff"/>
+    <path d="M${cx + side * 4} 296 L${cx + side * 4} 330" stroke="#ffd3e6" stroke-width="1.1" stroke-dasharray="2 2"/>
+    ${fur}`;
+  }
+};
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+const doll = document.getElementById('doll');
+const $ = id => document.getElementById(id);
+
+function renderDoll() {
+  $('hairBack').innerHTML = HAIR[state.hair].back;
+  $('hairFront').innerHTML = HAIR[state.hair].front;
+  $('top').innerHTML = TOPS[state.top];
+  $('skirt').innerHTML = SKIRTS[state.skirt]();
+  $('shoeL').innerHTML = SHOES[state.shoes](91.5, -1);
+  $('shoeR').innerHTML = SHOES[state.shoes](108.5, 1);
+}
+
+function popDoll() {
+  doll.classList.remove('pop');
+  void doll.getBoundingClientRect();
+  doll.classList.add('pop');
+}
+
+function buildSidebar() {
+  const host = $('categories');
+  host.style.display = 'flex';
+  host.style.flexDirection = 'column';
+  host.style.gap = '12px';
+  for (const [cat, data] of Object.entries(CATALOG)) {
+    const box = document.createElement('div');
+    box.className = 'category';
+    box.innerHTML = `<h3>${data.label}</h3><div class="options"></div>`;
+    const opts = box.querySelector('.options');
+    for (const [key, item] of Object.entries(data.items)) {
+      const b = document.createElement('button');
+      b.className = 'opt-btn';
+      b.dataset.cat = cat;
+      b.dataset.key = key;
+      b.innerHTML = `<span class="swatch" style="background:${item.swatch}"></span><span>${item.name}</span>`;
+      b.addEventListener('click', () => {
+        if (showing) return;
+        state[cat] = key;
+        renderDoll();
+        refreshActive();
+        popDoll();
+        spawnFlash($('flashBack'), 25 + Math.random() * 50, 8 + Math.random() * 25, 30);
+      });
+      opts.appendChild(b);
+    }
+    host.appendChild(box);
+  }
+  refreshActive();
+}
+
+function refreshActive() {
+  document.querySelectorAll('.opt-btn').forEach(b => {
+    b.classList.toggle('active', state[b.dataset.cat] === b.dataset.key);
+  });
+}
+
+function buildStageDecor() {
+  const row = $('bulbRow');
+  for (let i = 0; i < 18; i++) row.appendChild(document.createElement('span'));
+  const colors = ['#2b0f3d', '#3a1652', '#1f0a2e', '#45195f'];
+  [['crowdL', 1], ['crowdR', -1]].forEach(([id, dir]) => {
+    const host = $(id);
+    const count = 6;
+    for (let i = 0; i < count; i++) {
+      const f = document.createElement('div');
+      f.className = 'fan';
+      const row2 = i % 2;
+      const x = (i / count) * 85 + (row2 ? 6 : 0);
+      f.style[dir === 1 ? 'left' : 'right'] = x + '%';
+      f.style.bottom = (row2 ? 0 : 22) + 'px';
+      f.style.zIndex = row2 ? 2 : 1;
+      f.style.setProperty('--c', colors[i % colors.length]);
+      f.style.transform = `scale(${row2 ? 1.15 : .95})`;
+      f.innerHTML = `<div class="head"></div><div class="body"></div>${i % 2 === 0 ? '<div class="cam"></div>' : ''}`;
+      host.appendChild(f);
+    }
+  });
+}
+
+/* =========================================================
+   FLASHBULBS
+   ========================================================= */
+function spawnFlash(layer, xPct, yPct, size) {
+  const f = document.createElement('div');
+  f.className = 'flash';
+  f.style.left = xPct + '%';
+  f.style.top = yPct + '%';
+  f.style.setProperty('--s', size + 'px');
+  f.addEventListener('animationend', () => f.remove());
+  layer.appendChild(f);
+}
+
+function randomFlash(intense) {
+  const inCrowd = Math.random() < 0.35;
+  let x, y;
+  if (inCrowd) {
+    x = Math.random() < .5 ? 3 + Math.random() * 18 : 79 + Math.random() * 18;
+    y = 72 + Math.random() * 20;
+  } else {
+    x = 3 + Math.random() * 94;
+    y = 4 + Math.random() * 55;
+  }
+  const size = intense ? 30 + Math.random() * 45 : 22 + Math.random() * 25;
+  spawnFlash(inCrowd ? $('flashFront') : $('flashBack'), x, y, size);
+}
+
+function whiteOut() {
+  const w = $('whiteOut');
+  w.classList.remove('go');
+  void w.offsetWidth;
+  w.classList.add('go');
+}
+
+// gentle idle flashes
+setInterval(() => { if (!showing && Math.random() < .55) randomFlash(false); }, 900);
+
+/* =========================================================
+   SCORING
+   ========================================================= */
+const JUDGES = [
+  {
+    name: 'Madame Vogue', role: 'Editor-in-Chief', avatar: '👩‍🦳', cuteW: .3, styleW: .7, fav: 'classic',
+    lines: [
+      ['Hmm. The runway deserves more, darling.', 'Not quite magazine-ready yet.'],
+      ['Pleasant. I see potential, darling.', 'A respectable look — refine it.'],
+      ['Très chic! This could make my cover.', 'Polished and confident. I approve.'],
+      ['Iconic. Simply iconic. Cover girl!', 'Perfection. I have nothing to add.']
+    ]
+  },
+  {
+    name: 'Glitter Gigi', role: 'Sparkle Specialist', avatar: '🧚‍♀️', cuteW: .75, styleW: .25, fav: 'pink',
+    lines: [
+      ['Needs more sparkle, sweetie!', 'Where is the pink?! 🥺'],
+      ['Cute! Add a little extra shine!', 'Aww, adorable vibes!'],
+      ['Sooo cute I could squeal! 💖', 'Sparkly, sweet and totally fun!'],
+      ['OMG DREAM DOLL!!! 💖✨💖', 'The cutest look I have EVER seen!']
+    ]
+  },
+  {
+    name: 'Coach Strut', role: 'Street-Style Guru', avatar: '😎', cuteW: .5, styleW: .5, fav: 'sporty',
+    lines: [
+      ['The pieces aren’t talking to each other.', 'Kinda clashing — mix it up!'],
+      ['Solid fit, needs more attitude.', 'Good walk, the fit is okay.'],
+      ['That fit goes HARD. Love it.', 'Fresh, fun and fierce!'],
+      ['Ten out of ten. Absolute legend.', 'Runway royalty right here! 👑']
+    ]
+  }
+];
+
+const COMBOS = [
+  { req: { top: 'pinkGlitter', skirt: 'pastelPink', shoes: 'heels' }, bonus: 1.2, label: '💖 Total Dream Doll!' },
+  { req: { top: 'whiteTee', skirt: 'plaid', shoes: 'boots' }, bonus: 1, label: '📚 Preppy Perfection' },
+  { req: { top: 'neonGreen', skirt: 'denim', shoes: 'sneakers' }, bonus: 1, label: '🛹 Street-Style Star' },
+  { req: { hair: 'ponytail', shoes: 'sneakers' }, bonus: .4, label: '🎀 Sporty & Sweet' },
+  { req: { hair: 'waves', shoes: 'heels' }, bonus: .4, label: '✨ Hollywood Glam' },
+  { req: { hair: 'bob', skirt: 'plaid' }, bonus: .4, label: '🖤 Chic Schoolgirl' },
+  { req: { top: 'whiteTee', skirt: 'pastelPink' }, bonus: .3, label: '🍓 Soft & Fresh' },
+  { req: { top: 'neonGreen', skirt: 'pastelPink' }, bonus: -1.2, label: '⚠️ Neon vs. Pastel Clash', bad: true },
+  { req: { top: 'neonGreen', shoes: 'heels' }, bonus: -.6, label: '⚠️ Neon + Pink Heels Mismatch', bad: true },
+  { req: { top: 'pinkGlitter', skirt: 'denim', shoes: 'boots' }, bonus: .5, label: '🤠 Glam Cowgirl' }
+];
+
+function matches(req) {
+  return Object.entries(req).every(([k, v]) => state[k] === v);
+}
+
+function evaluate() {
+  const picks = Object.keys(CATALOG).map(cat => CATALOG[cat].items[state[cat]]);
+
+  // how well do the vibes match each other?
+  const vibeCount = {};
+  picks.forEach(p => p.vibes.forEach(v => vibeCount[v] = (vibeCount[v] || 0) + 1));
+  const maxVibe = Math.max(...Object.values(vibeCount));
+  const harmony = maxVibe >= 4 ? 1.5 : maxVibe === 3 ? 1 : maxVibe === 2 ? .3 : -.5;
+
+  const combos = COMBOS.filter(c => matches(c.req));
+  const comboBonus = combos.reduce((s, c) => s + c.bonus, 0);
+
+  const scores = JUDGES.map(j => {
+    const base = picks.reduce((s, p) => s + p.cute * j.cuteW + p.style * j.styleW, 0) / picks.length;
+    const favBonus = Math.min(1.2, (vibeCount[j.fav] || 0) * .3);
+    let raw = base - .9 + harmony + favBonus + comboBonus;
+    raw = Math.max(1, Math.min(10, raw));
+    return Math.round(raw * 2) / 2;
+  });
+
+  const notes = [];
+  if (maxVibe >= 3) {
+    const top = Object.entries(vibeCount).sort((a, b) => b[1] - a[1])[0][0];
+    notes.push({ label: `🌈 Cohesive ${top} vibe`, bad: false });
+  } else if (maxVibe <= 1) {
+    notes.push({ label: '🤔 Mixed-up vibes', bad: true });
+  }
+  combos.forEach(c => notes.push({ label: c.label, bad: !!c.bad }));
+  return { scores, notes };
+}
+
+function tierOf(score) {
+  return score >= 9.5 ? 3 : score >= 8 ? 2 : score >= 6 ? 1 : 0;
+}
+
+function heartsFor(score) {
+  const full = Math.floor(score);
+  const half = score % 1 !== 0;
+  return '💖'.repeat(full) + (half ? '🩷' : '') + '🤍'.repeat(10 - full - (half ? 1 : 0));
+}
+
+/* =========================================================
+   RUNWAY SHOW
+   ========================================================= */
+let showing = false;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function outfitDescription() {
+  return Object.keys(CATALOG).map(c => CATALOG[c].items[state[c]].name).join(' · ');
+}
+
+function setControlsDisabled(dis) {
+  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = dis);
+  $('startBtn').disabled = dis;
+  $('randomBtn').disabled = dis;
+}
+
+async function startShow() {
+  if (showing) return;
+  showing = true;
+  setControlsDisabled(true);
+  $('scorecard').classList.remove('show');
+  $('hint').style.opacity = 0;
+
+  const wrap = $('modelWrap');
+  wrap.classList.remove('walk');
+  doll.classList.remove('posing', 'walking');
+  void wrap.offsetWidth;
+
+  $('caption').textContent = '🎀 Now walking: ' + outfitDescription();
+  $('caption').classList.add('show');
+
+  wrap.classList.add('walk');
+  doll.classList.add('walking');
+
+  const flashTimer = setInterval(() => {
+    const n = 1 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < n; i++) setTimeout(() => randomFlash(true), i * 70);
+  }, 180);
+
+  await sleep(5000);
+
+  // final pose at the end of the runway
+  doll.classList.remove('walking');
+  wrap.classList.remove('walk');
+  doll.classList.add('posing');
+  $('caption').textContent = '📸 Strike a pose!';
+  whiteOut();
+  for (let i = 0; i < 16; i++) setTimeout(() => randomFlash(true), i * 45);
+  await sleep(500);
+  whiteOut();
+  await sleep(1400);
+
+  clearInterval(flashTimer);
+  $('caption').classList.remove('show');
+  doll.classList.remove('posing');
+  await showScores();
+}
+
+async function showScores() {
+  const { scores, notes } = evaluate();
+  $('outfitLine').textContent = outfitDescription();
+  const judgesEl = $('judges');
+  judgesEl.innerHTML = '';
+  $('totalBox').classList.remove('in');
+
+  const cards = JUDGES.map((j, i) => {
+    const s = scores[i];
+    const pool = j.lines[tierOf(s)];
+    const comment = pool[Math.floor(Math.random() * pool.length)];
+    const card = document.createElement('div');
+    card.className = 'judge';
+    card.innerHTML = `
+      <div class="avatar">${j.avatar}</div>
+      <div class="name">${j.name}</div>
+      <div class="role">${j.role}</div>
+      <div class="score"><span class="num">0</span><small>/10</small></div>
+      <div class="hearts">${heartsFor(s)}</div>
+      <div class="comment">“${comment}”</div>`;
+    judgesEl.appendChild(card);
+    return card;
+  });
+
+  $('scorecard').classList.add('show');
+  await sleep(450);
+
+  for (let i = 0; i < cards.length; i++) {
+    cards[i].classList.add('in');
+    await countUp(cards[i].querySelector('.num'), scores[i]);
+    randomFlash(true);
+    await sleep(350);
+  }
+
+  const total = scores.reduce((a, b) => a + b, 0);
+  $('totalScore').textContent = total % 1 ? total.toFixed(1) : total;
+  $('rank').textContent =
+    total >= 28 ? '👑 SUPERMODEL ICON' :
+    total >= 24 ? '💖 Runway Star' :
+    total >= 19 ? '✨ Rising Fashionista' : '🎀 Keep Styling!';
+  $('notes').innerHTML = notes.map(n => `<span class="note ${n.bad ? 'bad' : ''}">${n.label}</span>`).join('');
+  $('totalBox').classList.add('in');
+  if (total >= 24) confetti(total >= 28 ? 140 : 70);
+}
+
+function countUp(el, target) {
+  return new Promise(resolve => {
+    const start = performance.now();
+    const dur = 700;
+    (function tick(now) {
+      const t = Math.min(1, (now - start) / dur);
+      const v = target * (1 - Math.pow(1 - t, 3));
+      el.textContent = t < 1 ? v.toFixed(1) : (target % 1 ? target.toFixed(1) : target);
+      if (t < 1) requestAnimationFrame(tick); else resolve();
+    })(start);
+  });
+}
+
+function confetti(count) {
+  const stage = $('stage');
+  const colors = ['#ff4fa3', '#ffe066', '#a46bff', '#6fe3ff', '#7dff9a', '#fff'];
+  for (let i = 0; i < count; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + '%';
+    c.style.background = colors[i % colors.length];
+    c.style.borderRadius = Math.random() < .4 ? '50%' : '2px';
+    c.style.animationDuration = 2.2 + Math.random() * 2 + 's';
+    c.style.animationDelay = Math.random() * .8 + 's';
+    c.addEventListener('animationend', () => c.remove());
+    stage.appendChild(c);
+  }
+}
+
+function endShow() {
+  $('scorecard').classList.remove('show');
+  showing = false;
+  setControlsDisabled(false);
+  $('hint').style.opacity = 1;
+}
+
+/* =========================================================
+   WIRE UP
+   ========================================================= */
+$('startBtn').addEventListener('click', startShow);
+$('restyleBtn').addEventListener('click', endShow);
+$('againBtn').addEventListener('click', () => { showing = false; startShow(); });
+$('randomBtn').addEventListener('click', () => {
+  for (const cat of Object.keys(CATALOG)) {
+    const keys = Object.keys(CATALOG[cat].items);
+    state[cat] = keys[Math.floor(Math.random() * keys.length)];
+  }
+  renderDoll();
+  refreshActive();
+  popDoll();
+  whiteOut();
+});
+
+buildSidebar();
+buildStageDecor();
+renderDoll();
+</script>
+</body>
+</html>
