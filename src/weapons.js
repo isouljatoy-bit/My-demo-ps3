@@ -320,6 +320,23 @@ export class Weapons {
     for (const k in this.kick) this.kick[k] = 0;
   }
 
+  // Fresh mags on respawn; reserves carry over.
+  onRespawn() {
+    WEAPONS.forEach((d, i) => { this.state[i].mag = d.mag; });
+    this.swapT = 0;
+    this.swapTo = -1;
+    this.swapped = true;
+    this.reloadT = 0;
+    this.adsT = 0;
+    this.bloom = 0;
+    this.shotIdx = 0;
+    this.fireCd = 0.3;
+    this.pumpT = 0;
+    this.triggerHeld = true;
+    for (const k in this.kick) this.kick[k] = 0;
+    this.models[this.cur].mag.position.copy(this.models[this.cur].magBase);
+  }
+
   setCurrent(i) {
     if (this.models[this.cur]) this.models[this.cur].group.visible = false;
     this.cur = i;

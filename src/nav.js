@@ -1,8 +1,7 @@
 import { MAP } from './world.js';
 import { clamp } from './utils.js';
 
-// Street-level flow field. Rebuilt (BFS) whenever the target cell changes, then every
-// ground enemy just walks downhill — O(1) per agent per frame.
+// Street-level walkability grid shared by every flow field.
 export class NavGrid {
   constructor(col, cell = 2) {
     this.cell = cell;
@@ -11,11 +10,10 @@ export class NavGrid {
     const N = this.n * this.n;
     this.walk = new Uint8Array(N);
     this.gy = new Float32Array(N);
-    this.dist = new Int16Array(N).fill(-1);
-    this.queue = new Int32Array(N);
-    this.target = -1;
     this.walkList = [];
     this.build(col);
+    // Default field (Waves mode: everyone hunts the player).
+    this.main = new FlowField(this);
   }
 
   build(col) {
@@ -38,6 +36,8 @@ export class NavGrid {
     }
   }
 
+  field() { return new FlowField(this); }
+
   cellOf(x, z) {
     const ix = clamp(Math.floor((x - this.min) / this.cell), 0, this.n - 1);
     const iz = clamp(Math.floor((z - this.min) / this.cell), 0, this.n - 1);
@@ -56,31 +56,84 @@ export class NavGrid {
     if (this.walk[idx]) return idx;
     const n = this.n, ix = idx % n, iz = Math.floor(idx / n);
     for (let r = 1; r <= radius; r++) {
-      let best = -1;
       for (let dz = -r; dz <= r; dz++) {
         for (let dx = -r; dx <= r; dx++) {
           if (Math.abs(dx) !== r && Math.abs(dz) !== r) continue;
           const x = ix + dx, z = iz + dz;
           if (x < 0 || z < 0 || x >= n || z >= n) continue;
           const j = z * n + x;
-          if (this.walk[j]) { best = j; break; }
+          if (this.walk[j]) return j;
         }
-        if (best >= 0) break;
       }
-      if (best >= 0) return best;
     }
     return -1;
   }
 
+  // Random walkable street cell satisfying a predicate on its center.
+  randomWhere(pred, out, tries = 400) {
+    const list = this.walkList;
+    for (let t = 0; t < tries; t++) {
+      const idx = list[(Math.random() * list.length) | 0];
+      this.center(idx, out);
+      if (pred(out.x, out.z)) return out;
+    }
+    return null;
+  }
+
+  // Back-compat wrappers on the main field.
+  get target() { return this.main.key; }
+  set target(v) { this.main.key = v; }
+  update(x, z) { this.main.update(x, z); }
+  next(x, z, out) { return this.main.next(x, z, out); }
+  pathDist(x, z) { return this.main.pathDist(x, z); }
+  randomCell(minD, maxD, out) { return this.main.randomCell(minD, maxD, out); }
+}
+
+// Breadth-first distance field from one or many source points. Agents walk downhill.
+export class FlowField {
+  constructor(grid) {
+    this.g = grid;
+    const N = grid.n * grid.n;
+    this.dist = new Int16Array(N).fill(-1);
+    this.queue = new Int32Array(N);
+    this.key = -1;
+    this._src = [];
+  }
+
   update(x, z) {
-    let start = this.nearestWalkable(this.cellOf(x, z), 14);
-    if (start < 0 || start === this.target) return;
-    this.target = start;
-    const n = this.n, dist = this.dist, walk = this.walk, q = this.queue;
-    dist.fill(-1);
+    const start = this.g.nearestWalkable(this.g.cellOf(x, z), 14);
+    if (start < 0 || start === this.key) return;
+    this.key = start;
+    this._src.length = 0;
+    this._src.push(start);
+    this.bfs(this._src);
+  }
+
+  // sources: array of {x, z} (or bodies with .pos) — e.g. every hostile unit.
+  updateSources(points) {
+    const src = this._src;
+    src.length = 0;
+    const seen = this.dist;
+    seen.fill(-1);
+    for (const p of points) {
+      const c = this.g.nearestWalkable(this.g.cellOf(p.x, p.z), 8);
+      if (c >= 0 && seen[c] !== 0) {
+        seen[c] = 0;
+        src.push(c);
+      }
+    }
+    this.key = -2;
+    this.bfs(src, true);
+  }
+
+  bfs(sources, preset = false) {
+    const n = this.g.n, dist = this.dist, walk = this.g.walk, q = this.queue;
+    if (!preset) dist.fill(-1);
     let head = 0, tail = 0;
-    dist[start] = 0;
-    q[tail++] = start;
+    for (const s of sources) {
+      dist[s] = 0;
+      q[tail++] = s;
+    }
     while (head < tail) {
       const cur = q[head++];
       const cx = cur % n, cz = (cur - cx) / n;
@@ -102,14 +155,13 @@ export class NavGrid {
     }
   }
 
-  // Writes the next waypoint (cell center) into out. Returns false if no path.
   next(x, z, out) {
-    const n = this.n;
-    let idx = this.cellOf(x, z);
+    const g = this.g, n = g.n;
+    const idx = g.cellOf(x, z);
     if (this.dist[idx] < 0) {
       const alt = this.nearestReached(idx);
       if (alt < 0) return false;
-      this.center(alt, out);
+      g.center(alt, out);
       return true;
     }
     if (this.dist[idx] === 0) return false;
@@ -125,19 +177,19 @@ export class NavGrid {
         const j = zz * n + xx;
         const d = this.dist[j];
         if (d >= 0 && d < bd) {
-          if (dx && dz && (!this.walk[cz * n + xx] || !this.walk[zz * n + cx])) continue;
+          if (dx && dz && (!g.walk[cz * n + xx] || !g.walk[zz * n + cx])) continue;
           bd = d;
           best = j;
         }
       }
     }
     if (best < 0) return false;
-    this.center(best, out);
+    g.center(best, out);
     return true;
   }
 
   nearestReached(idx) {
-    const n = this.n, ix = idx % n, iz = Math.floor(idx / n);
+    const n = this.g.n, ix = idx % n, iz = Math.floor(idx / n);
     for (let r = 1; r <= 3; r++) {
       for (let dz = -r; dz <= r; dz++) {
         for (let dx = -r; dx <= r; dx++) {
@@ -151,22 +203,21 @@ export class NavGrid {
     return -1;
   }
 
-  // Random reachable street cell between minD and maxD BFS steps from the target.
   randomCell(minD, maxD, out) {
-    const list = this.walkList;
+    const list = this.g.walkList;
     for (let tries = 0; tries < 400; tries++) {
       const idx = list[(Math.random() * list.length) | 0];
       const d = this.dist[idx];
-      if (d >= minD && d <= maxD) return this.center(idx, out);
+      if (d >= minD && d <= maxD) return this.g.center(idx, out);
     }
     for (let tries = 0; tries < 400; tries++) {
       const idx = list[(Math.random() * list.length) | 0];
-      if (this.dist[idx] >= Math.min(minD, 8)) return this.center(idx, out);
+      if (this.dist[idx] >= Math.min(minD, 8)) return this.g.center(idx, out);
     }
     return null;
   }
 
   pathDist(x, z) {
-    return this.dist[this.cellOf(x, z)];
+    return this.dist[this.g.cellOf(x, z)];
   }
 }

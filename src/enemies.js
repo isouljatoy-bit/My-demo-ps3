@@ -8,6 +8,13 @@ export const KINDS = {
   rusher: { hp: 75, speed: 5.6, range: 28, pref: 7, acc: 0.2, dmg: 5, burst: [4, 6], rate: 0.09, pause: [1.0, 1.6], react: 0.6, sound: 'esmg', score: 120, jacket: '#5b2a86', pants: '#1f1f24', crew: '#c77dff', gun: 0.42 },
   sniper: { hp: 80, speed: 1.6, range: 160, pref: 999, acc: 0.5, dmg: 24, burst: [1, 1], rate: 0.1, pause: [3.5, 4.5], react: 1.5, sound: 'esniper', score: 150, jacket: '#7a1f1f', pants: '#2b2b2b', crew: '#ff4d4d', gun: 0.95 },
 };
+// Gang 0 is the player's crew. Colors drive the jacket, bandana and pants.
+export const GANGS = [
+  { name: 'BLUE', jacket: '#1f4fa8', crew: '#4fa8ff', pants: '#22283a', css: '#4fa8ff' },
+  { name: 'GREEN', jacket: '#2f6b3a', crew: '#3ddc84', pants: '#2b3648', css: '#3ddc84' },
+  { name: 'PURPLE', jacket: '#5b2a86', crew: '#c77dff', pants: '#1f1f24', css: '#c77dff' },
+  { name: 'RED', jacket: '#8a1f1f', crew: '#ff4d4d', pants: '#2b2b2b', css: '#ff5a5a' },
+];
 const SKIN = ['#8d5524', '#c68642', '#e0ac69', '#f1c27d', '#5c3a21', '#a86b3c'];
 const _col = new THREE.Color();
 
@@ -47,8 +54,8 @@ function parts(list) {
 }
 
 // Upper body (pivot at hips, y=0.95). Faces +Z.
-function upperGeo(kind, skin, armored) {
-  const K = KINDS[kind];
+function upperGeo(kind, gang, skin, armored) {
+  const K = { ...KINDS[kind], ...GANGS[gang] };
   const L = K.gun;
   const list = [
     [0.5, 0.6, 0.28, 0, 0.32, 0, K.jacket],
@@ -79,8 +86,8 @@ function upperGeo(kind, skin, armored) {
   return parts(list);
 }
 
-function legGeo(kind) {
-  const K = KINDS[kind];
+function legGeo(gang) {
+  const K = GANGS[gang];
   return parts([
     [0.18, 0.86, 0.2, 0, -0.43, 0, K.pants],
     [0.19, 0.1, 0.3, 0, -0.9, 0.05, '#e8e8e8'],
@@ -117,12 +124,18 @@ class Enemy {
     this.wp = { x: 0, y: 0, z: 0 };
   }
 
-  spawn(kind, x, y, z, roof, wave, armored) {
+  spawn(kind, x, y, z, roof, wave, armored, team = 1, gang = 1) {
     const K = KINDS[kind];
     this.kind = kind;
+    this.team = team;
+    this.gang = gang;
+    this.target = null;
+    this.targetIsPlayer = team !== 0;
+    this.targetT = rand(0, 0.5);
+    this.killer = null;
     this.K = K;
     this.roof = roof;
-    this.variant = randInt(0, this.pool.geos[kind].length - 1);
+    this.variant = randInt(0, this.pool.geos[gang][kind].length - 1);
     this.armorIdx = armored ? 1 : 0;
     this.hasToken = false;
     this.tokenCd = rand(0, 2);
@@ -165,6 +178,7 @@ class Enemy {
     this.muzzleLocal.set(0.06, 0.4 + 0.95, 0.3 + K.gun + 0.18);
     this.sinceSeen = 99;
     this.backT = 0;
+    this.perchT = rand(35, 70);
   }
 
   despawn() {
@@ -174,8 +188,14 @@ class Enemy {
     this.root.visible = false;
   }
 
-  takeDamage(amount, head, dx, dz, game) {
+  takeDamage(amount, head, dx, dz, game, attacker = null) {
     if (!this.alive) return false;
+    // Getting shot pulls attention onto the shooter.
+    if (attacker && attacker.alive && attacker.team !== this.team && Math.random() < 0.6) {
+      this.target = attacker;
+      this.targetIsPlayer = false;
+      this.targetT = rand(1.5, 3);
+    }
     this.hp -= amount;
     this.flash = 1;
     this.flinch = Math.min(1, this.flinch + (head ? 1 : 0.6));
@@ -184,6 +204,7 @@ class Enemy {
     if (this.hp <= 0) {
       if (this.hasToken) this.pool.releaseToken(this);
       this.alive = false;
+      this.killer = attacker;
       this.deadT = 0;
       this.fallDir = Math.atan2(-dx, -dz);
       this.root.rotation.y = this.fallDir;
@@ -219,9 +240,16 @@ class Enemy {
       return;
     }
 
-    const P = g.player.body.pos;
+    // Pick the nearest hostile: a rival gang member, or the player if we're not on their crew.
+    this.targetT -= dt;
+    if (this.targetT <= 0 || (this.targetIsPlayer ? g.player.dead : !(this.target && this.target.alive))) {
+      this.targetT = rand(0.5, 0.9);
+      this.pickTarget(g);
+    }
+    const tp = this.targetIsPlayer ? g.player.body.pos : this.target ? this.target.body.pos : null;
+    const P = tp || b.pos;
     const dx = P.x - b.pos.x, dz = P.z - b.pos.z, dy = P.y - b.pos.y;
-    const dist = Math.hypot(dx, dz);
+    const dist = tp ? Math.hypot(dx, dz) : 999;
     const K = this.K;
     this.sinceSeen += dt;
 
@@ -229,15 +257,25 @@ class Enemy {
     this.losT -= dt;
     if (this.losT <= 0) {
       this.losT = 0.22 + Math.random() * 0.12;
-      this.los = dist < K.range * 1.2 && g.lineOfSight(b.pos.x, b.pos.y + 1.6, b.pos.z, P.x, P.y + 1.5, P.z);
+      this.los = !!tp && dist < K.range * 1.2 && g.lineOfSight(b.pos.x, b.pos.y + 1.6, b.pos.z, P.x, P.y + 1.5, P.z);
       if (this.los) this.sinceSeen = 0;
     }
 
-    // Never let a wave stall: an enemy that can't find an angle for too long repositions.
-    if (!this.los && this.sinceSeen > (this.roof ? 10 : 16)) {
+    // Never let a round stall: a rival that can't find an angle on the player for too long repositions.
+    if (this.targetIsPlayer && !this.los && this.sinceSeen > (this.roof ? 10 : 16)) {
       this.sinceSeen = 0;
       if (g.relocateEnemy(this)) return;
     }
+    // Gang War: a rooftop shooter with nothing to shoot heads down to the street.
+    // Every perch is temporary so the war always resolves.
+    if (this.roof && g.mode === 'gang') {
+      this.perchT -= dt;
+      if ((this.perchT <= 0 || (!this.los && this.sinceSeen > 14)) && g.dropToStreet(this)) {
+        this.sinceSeen = 0;
+        return;
+      }
+    }
+    const field = g.fieldFor(this.team);
 
     // Facing.
     const wantYaw = Math.atan2(dx, dz);
@@ -269,7 +307,7 @@ class Enemy {
         mx = px * this.strafeSign; mz = pz * this.strafeSign;
         if (dist < K.pref * 0.6) { mx -= dx / dist * 0.7; mz -= dz / dist * 0.7; }
         speed *= 0.55;
-      } else if (this.backT > 0 || (!this.los && this.sinceSeen > 2.5 && dist < 26 && g.nav.pathDist(b.pos.x, b.pos.z) <= 4)) {
+      } else if (this.targetIsPlayer && (this.backT > 0 || (!this.los && this.sinceSeen > 2.5 && dist < 26 && field.pathDist(b.pos.x, b.pos.z) <= 4))) {
         // Hugging the base of the player's building with no angle: back off the wall to see the roof.
         if (this.backT <= 0) this.backT = rand(2, 3.5);
         this.backT -= dt;
@@ -278,10 +316,10 @@ class Enemy {
         if (this.los) this.backT = Math.min(this.backT, 0.4);
       } else {
         this.navT -= dt;
-        if (g.nav.next(b.pos.x, b.pos.z, this.wp)) {
+        if (field.next(b.pos.x, b.pos.z, this.wp)) {
           mx = this.wp.x - b.pos.x;
           mz = this.wp.z - b.pos.z;
-        } else if (dist > 1.5) {
+        } else if (tp && dist > 1.5) {
           mx = dx; mz = dz;
         }
         const ml = Math.hypot(mx, mz);
@@ -344,7 +382,7 @@ class Enemy {
           this.glintT = 0.12;
           this.muzzleWorld(this.tmp);
           g.fx.glint(this.tmp.x, this.tmp.y + 0.08, this.tmp.z);
-          if (this.shotCd > 0.55) g.audio.glint(dist, 0);
+          if (this.shotCd > 0.55 && this.targetIsPlayer) g.audio.glint(dist, 0);
         }
       }
     } else {
@@ -352,13 +390,14 @@ class Enemy {
     }
     this.shotCd -= dt;
     // Attack tokens: only a few bots may shoot at the player at once; the rest maneuver.
-    const wantsFire = this.los && dist < K.range && this.aimT > K.react && !g.player.dead;
+    // Bot-vs-bot fights don't need tokens.
+    const wantsFire = this.los && dist < K.range && this.aimT > K.react && (this.targetIsPlayer ? !g.player.dead : true);
     this.tokenCd -= dt;
     if (this.hasToken) {
       this.tokenT -= dt;
-      if (!wantsFire || this.tokenT <= 0) this.pool.releaseToken(this);
-    } else if (wantsFire && this.tokenCd <= 0) this.pool.requestToken(this);
-    if (this.shotCd <= 0 && wantsFire && this.hasToken) {
+      if (!wantsFire || this.tokenT <= 0 || !this.targetIsPlayer) this.pool.releaseToken(this);
+    } else if (wantsFire && this.targetIsPlayer && this.tokenCd <= 0) this.pool.requestToken(this);
+    if (this.shotCd <= 0 && wantsFire && (this.hasToken || !this.targetIsPlayer)) {
       if (this.burstLeft <= 0) this.burstLeft = randInt(K.burst[0], K.burst[1]);
       this.fire(g, dist);
       this.burstLeft--;
@@ -366,8 +405,47 @@ class Enemy {
     }
   }
 
+  pickTarget(g) {
+    const b = this.body.pos;
+    let best = null, bestD = Infinity, isPlayer = false;
+    if (this.team !== 0 && !g.player.dead) {
+      const P = g.player.body.pos;
+      bestD = Math.hypot(P.x - b.x, P.z - b.z) * 0.85;
+      isPlayer = true;
+    }
+    // Street bots can't climb, so they hunt other street-level targets first; a target we
+    // haven't seen for a while is dropped in favor of someone else.
+    const stale = this.sinceSeen > 6 && !this.targetIsPlayer ? this.target : null;
+    let roofBest = null, roofD = Infinity;
+    for (const o of this.pool.list) {
+      if (!o.alive || o.team === this.team || o === stale) continue;
+      const d = Math.abs(o.body.pos.x - b.x) + Math.abs(o.body.pos.z - b.z);
+      if (!this.roof && o.roof) {
+        if (d < roofD) { roofD = d; roofBest = o; }
+        continue;
+      }
+      if (d < bestD) { bestD = d; best = o; isPlayer = false; }
+    }
+    if (!best && !isPlayer && roofBest) best = roofBest;
+    if (stale && best !== stale) this.sinceSeen = 0;
+    this.target = best;
+    this.targetIsPlayer = isPlayer;
+  }
+
   fire(g, dist) {
     const K = this.K;
+    if (!this.targetIsPlayer) {
+      const t = this.target;
+      const tv = Math.hypot(t.body.vel.x, t.body.vel.z);
+      let acc = K.acc * 1.6 * this.accScale;
+      acc *= dist < 10 ? 1.15 : clamp(1 - (dist - 10) / (K.range * 1.3), 0.3, 1);
+      acc *= tv > 4 ? 0.7 : 1;
+      acc *= Math.min(1, 0.45 + this.aimT / 2.2);
+      const m = this.muzzleWorld(this.tmp);
+      g.botShot(this, t, m, Math.random() < acc, dist, K.dmg * 1.8 * rand(0.85, 1.15));
+      this.flinch = Math.min(1, this.flinch + 0.12);
+      return;
+    }
     const p = g.player;
     const pb = p.body;
     const psp = Math.hypot(pb.vel.x, pb.vel.z);
@@ -387,16 +465,19 @@ class Enemy {
 // ---------------------------------------------------------------------------
 export class Enemies {
   constructor(scene, max = 14) {
-    this.geos = {};
-    this.legs = {};
-    for (const kind of Object.keys(KINDS)) {
-      this.geos[kind] = [];
-      for (let v = 0; v < 3; v++) {
-        const skin = SKIN[(v * 2 + kind.length) % SKIN.length];
-        this.geos[kind].push([upperGeo(kind, skin, false), upperGeo(kind, skin, true)]);
+    // geos[gang][kind][variant][armored]
+    this.geos = GANGS.map((_, gang) => {
+      const byKind = {};
+      for (const kind of Object.keys(KINDS)) {
+        byKind[kind] = [];
+        for (let v = 0; v < 2; v++) {
+          const skin = SKIN[(v * 3 + gang + kind.length) % SKIN.length];
+          byKind[kind].push([upperGeo(kind, gang, skin, false), upperGeo(kind, gang, skin, true)]);
+        }
       }
-      this.legs[kind] = legGeo(kind);
-    }
+      return byKind;
+    });
+    this.legs = GANGS.map((_, gang) => legGeo(gang));
     this.list = [];
     for (let i = 0; i < max; i++) this.list.push(new Enemy(scene, this));
     this.maxTokens = 99;
@@ -420,12 +501,21 @@ export class Enemies {
       this.ims.push(im);
       return im;
     };
-    this.upperIM = {};
-    this.legIM = {};
-    for (const kind of Object.keys(KINDS)) {
-      this.upperIM[kind] = this.geos[kind].map((pair) => pair.map((geo) => mk(geo, max)));
-      this.legIM[kind] = mk(this.legs[kind], max * 2);
-    }
+    this.upperIM = this.geos.map((byKind) => {
+      const o = {};
+      for (const kind of Object.keys(byKind)) o[kind] = byKind[kind].map((pair) => pair.map((geo) => mk(geo, max)));
+      return o;
+    });
+    this.legIM = this.legs.map((geo) => mk(geo, max * 2));
+    // Floating blue diamonds mark the player's crew.
+    this.marker = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.13, 0).scale(1, 1.4, 1),
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(0.7, 1.8, 4), fog: false }), max);
+    this.marker.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.marker.count = 0;
+    this.marker.frustumCulled = false;
+    scene.add(this.marker);
+    this._dummy = new THREE.Object3D();
+    this.time = 0;
     this._c = new THREE.Color();
     this.hitInfo = { e: null, t: 0, head: false, x: 0, y: 0, z: 0 };
     this._box = { x0: 0, y0: 0, z0: 0, x1: 0, y1: 0, z1: 0 };
@@ -443,11 +533,23 @@ export class Enemies {
     return n;
   }
 
-  spawn(kind, x, y, z, roof, wave, armored) {
+  spawn(kind, x, y, z, roof, wave, armored, team = 1, gang = 1) {
     const e = this.list.find((q) => !q.active);
     if (!e) return null;
-    e.spawn(kind, x, y, z, roof, wave, armored);
+    e.spawn(kind, x, y, z, roof, wave, armored, team, gang);
     return e;
+  }
+
+  countTeam(team) {
+    let n = 0;
+    for (const e of this.list) if (e.alive && e.team === team) n++;
+    return n;
+  }
+
+  get hostileCount() {
+    let n = 0;
+    for (const e of this.list) if (e.alive && e.team !== 0) n++;
+    return n;
   }
 
   requestToken(e) {
@@ -467,6 +569,7 @@ export class Enemies {
 
   update(dt, g) {
     this.frame++;
+    this.time += dt;
     const P = g.player.body.pos;
     for (let i = 0; i < this.list.length; i++) {
       const e = this.list[i];
@@ -495,13 +598,26 @@ export class Enemies {
       e.root.updateMatrixWorld(true);
       const f = e.flash;
       c.setRGB(1 + f * 2.5, 1 - f * 0.4, 1 - f * 0.45);
-      put(this.upperIM[e.kind][e.variant][e.armorIdx], e.upper.matrixWorld);
-      const legs = this.legIM[e.kind];
+      put(this.upperIM[e.gang][e.kind][e.variant][e.armorIdx], e.upper.matrixWorld);
+      const legs = this.legIM[e.gang];
       put(legs, e.legL.matrixWorld);
       put(legs, e.legR.matrixWorld);
     }
+    let m = 0;
+    const d = this._dummy;
+    for (const e of this.list) {
+      if (!e.alive || e.team !== 0) continue;
+      d.position.set(e.body.pos.x, e.body.pos.y + 2.3 + Math.sin(this.time * 3 + e.walkT) * 0.06, e.body.pos.z);
+      d.rotation.set(0, this.time * 2, 0);
+      d.updateMatrix();
+      this.marker.setMatrixAt(m++, d.matrix);
+    }
+    this.marker.count = m;
+    this.marker.visible = m > 0;
+    if (m) this.marker.instanceMatrix.needsUpdate = true;
     for (const im of this.ims) {
       im.count = im.userData.n;
+      im.visible = im.count > 0;
       if (im.count > 0) {
         im.instanceMatrix.needsUpdate = true;
         im.instanceColor.needsUpdate = true;
@@ -519,7 +635,7 @@ export class Enemies {
     let best = maxT, hitE = null, head = false;
     const B = this._box;
     for (const e of this.list) {
-      if (!e.alive) continue;
+      if (!e.alive || e.team === 0) continue;
       const p = e.body.pos;
       const cx = p.x - o.x, cy = p.y + 0.9 - o.y, cz = p.z - o.z;
       const t = cx * d.x + cy * d.y + cz * d.z;

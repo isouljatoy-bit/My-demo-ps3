@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import { AudioEngine } from './audio.js';
 import { createTextures } from './textures.js';
-import { World } from './world.js';
+import { World, MAP } from './world.js';
 import { NavGrid } from './nav.js';
 import { createSky, createEnvMap, createHills, SUN_DIR } from './sky.js';
 import { FX } from './effects.js';
 import { Weapons } from './weapons.js';
 import { Player } from './player.js';
-import { Enemies, KINDS } from './enemies.js';
+import { Enemies, KINDS, GANGS } from './enemies.js';
 import { Pickups } from './pickups.js';
 import { Input } from './input.js';
 import { HUD } from './hud.js';
@@ -21,6 +21,9 @@ const QUALITY = {
   high: { scale: 1.0, shadow: 2048, shadowEvery: 1, bloom: true, msaa: 4, enemies: 12, fx: 'high' },
 };
 const BOT_COUNT = 100;
+const GANG_SIZE = BOT_COUNT / 4;
+const RESPAWN_T = 2.5;
+const WAVE_LIVES = 3;
 const KIND_LABEL = { gunner: 'GUNNER', rusher: 'RUSHER', sniper: 'ROOF SNIPER' };
 const $ = (id) => document.getElementById(id);
 
@@ -90,6 +93,7 @@ class Game {
     this.world.generate(7);
     await step('MAPPING THE STREETS…');
     this.nav = new NavGrid(this.world.col, 2);
+    this.fields = GANGS.map(() => this.nav.field());
     this.hud.buildMinimap(this.world);
 
     await step('LIGHTING THE SUNSET…');
@@ -157,7 +161,7 @@ class Game {
   bindUI() {
     const tap = (id, fn) => $(id).addEventListener('click', (e) => { e.preventDefault(); this.audio.init(); this.audio.ui(); fn(); });
     tap('btn-play', () => this.startRun('waves'));
-    tap('btn-bots', () => this.startRun('bots'));
+    tap('btn-bots', () => this.startRun('gang'));
     tap('btn-resume', () => this.setState('play'));
     tap('btn-restart', () => this.startRun(this.mode));
     tap('btn-quit', () => this.setState('menu'));
@@ -203,10 +207,10 @@ class Game {
   }
 
   updateBest() {
-    const best = store.get('stw.best', null), b100 = store.get('stw.best100', null);
+    const best = store.get('stw.best', null), b100 = store.get('stw.bestGang', null);
     const parts = [];
     if (best) parts.push(`WAVES BEST: WAVE ${best.wave} · ${best.score.toLocaleString()} PTS`);
-    if (b100) parts.push(`100 BOTS BEST: ${b100.kills ?? 0} KILLS · ${b100.score.toLocaleString()} PTS`);
+    if (b100) parts.push(`GANG WAR BEST: ${b100.kills ?? 0} KILLS · ${b100.score.toLocaleString()} PTS`);
     $('best').innerHTML = parts.join('<br>');
   }
 
@@ -252,7 +256,9 @@ class Game {
     this.pickups.clear();
     this.fx.clear();
     this.hud.clearTransient();
-    this.stats = { kills: 0, heads: 0, score: 0, shots: 0, hits: 0 };
+    this.stats = { kills: 0, heads: 0, score: 0, shots: 0, hits: 0, deaths: 0 };
+    this.lives = WAVE_LIVES;
+    this.hud.respawn(-1, false);
     this.killTimes = [];
     this.deathT = 0;
     this.timeScale = 1;
@@ -269,7 +275,7 @@ class Game {
     this.nav.target = -1;
     this.nav.update(this.player.body.pos.x, this.player.body.pos.z);
     this.navT = 0;
-    if (mode === 'bots') this.startBots();
+    if (mode === 'gang') this.startGangWar();
     else {
       this.enemies.maxTokens = 99;
       this.enemyDmgMul = 1;
@@ -281,63 +287,163 @@ class Game {
 
   startWave(n) {
     this.wave = n;
+    this.waveGang = ((n - 1) % 3) + 1;
     this.toSpawn = 4 + n * 3;
     this.cap = Math.min(this.q.enemies, 3 + n);
     this.spawnT = 1.5;
     this.intermission = 0;
-    this.hud.showBanner(`WAVE ${n}`, n === 1 ? 'Rival crews incoming — hold the turf' : n % 3 === 0 ? 'Snipers on the rooftops' : 'They brought backup', 3);
+    const crew = GANGS[this.waveGang].name;
+    this.hud.showBanner(`WAVE ${n}`, n === 1 ? `${crew} crew rolling in — hold the turf` : n % 3 === 0 ? `${crew} snipers on the rooftops` : `${crew} crew brought backup`, 3);
     this.audio.waveStart();
   }
 
-  // ---------- 100 Bots mode ----------
-  startBots() {
-    const P = this.player.body.pos, W = this.world;
+  // ---------- Gang War mode ----------
+  // Four crews of 25 hold the four quarters of the city. You lead BLUE; the other three
+  // fight you and each other. The last crew standing owns the turf.
+  startGangWar() {
+    const P = this.player.body.pos, W = this.world, E = this.enemies;
     this.wave = 1;
     this.toSpawn = 0;
-    this.enemies.maxTokens = 4;
+    E.maxTokens = 4;
     this.enemyDmgMul = 0.6;
+    const quad = (x, z) => (x < 0 ? 0 : 1) + (z < 0 ? 0 : 2);
+    const crowded = (x, z) => E.list.some((e) => e.alive && Math.abs(e.body.pos.x - x) + Math.abs(e.body.pos.z - z) < 1.5);
     let placed = 0;
-    // Rooftops first (up to two shooters per roof), then the streets.
-    const spots = W.roofSpots.slice().sort(() => Math.random() - 0.5);
-    for (const s of spots) {
-      if (Math.hypot(s.x - P.x, s.z - P.z) < 28) continue;
-      for (let k = 0; k < 2 && placed < 28; k++) {
+    for (let gang = 0; gang < GANGS.length; gang++) {
+      let n = 0;
+      const roofs = W.roofSpots.filter((s) => quad(s.x, s.z) === gang).sort(() => Math.random() - 0.5);
+      for (const s of roofs) {
+        if (n >= 7) break;
+        if (Math.hypot(s.x - P.x, s.z - P.z) < 10) continue;
         for (let tries = 0; tries < 6; tries++) {
           const x = s.x + rand(-s.rx, s.rx) * 0.85, z = s.z + rand(-s.rz, s.rz) * 0.85;
-          if (!isClear(W.col, x, z, 0.45, s.y + 0.05, s.y + 1.8)) continue;
-          if (this.enemies.list.some((e) => e.alive && Math.hypot(e.body.pos.x - x, e.body.pos.z - z) < 1.2)) continue;
-          const kind = Math.random() < 0.25 ? 'sniper' : 'gunner';
-          if (this.enemies.spawn(kind, x, s.y, z, s, this.wave, Math.random() < 0.12)) placed++;
+          if (!isClear(W.col, x, z, 0.45, s.y + 0.05, s.y + 1.8) || crowded(x, z)) continue;
+          const kind = Math.random() < 0.3 ? 'sniper' : 'gunner';
+          if (E.spawn(kind, x, s.y, z, s, this.wave, Math.random() < 0.12, gang, gang)) n++;
           break;
         }
       }
-    }
-    for (let tries = 0; tries < 2000 && placed < BOT_COUNT; tries++) {
-      const c = this.nav.randomCell(16, 140, this._cell);
-      if (!c) break;
-      if (Math.hypot(c.x - P.x, c.z - P.z) < 36) continue;
-      if (this.enemies.list.some((e) => e.alive && Math.abs(e.body.pos.x - c.x) + Math.abs(e.body.pos.z - c.z) < 1.5)) continue;
-      const kind = Math.random() < 0.3 ? 'rusher' : 'gunner';
-      if (this.enemies.spawn(kind, c.x, c.y, c.z, null, this.wave, Math.random() < 0.15)) placed++;
+      for (let tries = 0; tries < 800 && n < GANG_SIZE; tries++) {
+        const c = this.nav.randomWhere((x, z) => quad(x, z) === gang && Math.hypot(x - P.x, z - P.z) > 8 && Math.abs(x) < MAP.HALF - 6 && Math.abs(z) < MAP.HALF - 6, this._cell, 40);
+        if (!c || crowded(c.x, c.z)) continue;
+        const kind = Math.random() < 0.3 ? 'rusher' : 'gunner';
+        if (E.spawn(kind, c.x, c.y, c.z, null, this.wave, Math.random() < 0.15, gang, gang)) n++;
+      }
+      placed += n;
     }
     this.botTotal = placed;
-    this.hud.showBanner(`${placed} BOTS`, 'Every crew in the city wants your turf', 3.2);
+    this.fieldT = 0;
+    this.fieldIdx = 0;
+    for (let t = 0; t < GANGS.length; t++) this.updateField(t);
+    this.gangAlive = GANGS.map((_, g) => E.countTeam(g));
+    this.hud.showBanner('GANG WAR', `You run BLUE with ${this.gangAlive[0]} homies · last crew standing wins`, 3.6);
     this.audio.waveStart();
   }
 
-  updateBots(dt) {
+  fieldFor(team) {
+    return this.mode === 'gang' ? this.fields[team] : this.nav;
+  }
+
+  // Each crew walks toward its nearest hostile: rival bots, plus the player for rival crews.
+  updateField(team) {
+    const src = this._src || (this._src = []);
+    src.length = 0;
+    for (const e of this.enemies.list) if (e.alive && e.team !== team && !e.roof) src.push(e.body.pos);
+    if (team !== 0 && !this.player.dead) src.push(this.player.body.pos);
+    if (src.length) this.fields[team].updateSources(src);
+  }
+
+  updateGangWar(dt) {
     this.runTime += dt;
+    this.fieldT -= dt;
+    if (this.fieldT <= 0) {
+      this.fieldT = 0.15;
+      this.updateField(this.fieldIdx);
+      this.fieldIdx = (this.fieldIdx + 1) % GANGS.length;
+    }
     if (this.victory) {
       this.victoryT += dt;
-      if (this.victoryT > 3) this.setState('over');
+      if (this.victoryT > 3.5) this.setState('over');
       return;
     }
-    if (this.enemies.aliveCount === 0) {
+    this.checkGangs();
+  }
+
+  checkGangs() {
+    if (this.mode !== 'gang' || this.victory) return;
+    const now = GANGS.map((_, g) => this.enemies.countTeam(g));
+    for (let g = 1; g < GANGS.length; g++) {
+      if (this.gangAlive[g] > 0 && now[g] === 0) {
+        this.hud.showBanner(`${GANGS[g].name} CREW WIPED OUT`, `${now.slice(1).filter((n) => n > 0).length} rival crews left`, 2.8);
+        this.audio.waveClear();
+        this.stats.score += 1500;
+      }
+    }
+    this.gangAlive = now;
+    if (now[1] + now[2] + now[3] === 0) {
       this.victory = true;
-      const bonus = 5000 + Math.max(0, Math.round(600 - this.runTime)) * 10;
+      const bonus = 5000 + Math.max(0, Math.round(900 - this.runTime)) * 10 + now[0] * 100;
       this.stats.score += bonus;
-      this.hud.showBanner('TURF SECURED', `All ${this.botTotal} bots down · +${bonus}`, 3.5);
-      this.audio.waveClear();
+      this.hud.showBanner('TURF SECURED', `BLUE runs the city · ${now[0]} homies left · +${bonus}`, 3.8);
+    }
+  }
+
+  dropToStreet(e) {
+    const g = this.nav;
+    const idx = g.nearestWalkable(g.cellOf(e.body.pos.x, e.body.pos.z), 16);
+    if (idx < 0) return false;
+    const c = g.center(idx, this._cell);
+    const cam = this.camera.position;
+    if (this.isOnScreen(c.x, c.y + 1, c.z) && this.lineOfSight(cam.x, cam.y, cam.z, c.x, c.y + 1.2, c.z)) return false;
+    this.placeEnemy(e, c.x, c.y, c.z, null);
+    return true;
+  }
+
+  onBotKill(victim, killer) {
+    const P = this.player.body.pos;
+    if (killer && killer.team === 0) this.stats.crewKills = (this.stats.crewKills || 0) + 1;
+    if (killer && Math.hypot(victim.body.pos.x - P.x, victim.body.pos.z - P.z) < 60) {
+      this.hud.killfeed(`${GANGS[killer.gang].name} ▸ ${GANGS[victim.gang].name}`, false, GANGS[killer.gang].css);
+    }
+    if (victim.team === 0 && Math.hypot(victim.body.pos.x - P.x, victim.body.pos.z - P.z) < 40) this.hud.popup('HOMIE DOWN');
+    this.checkGangs();
+  }
+
+  // Bot-on-bot gunfire: resolved statistically, drawn and heard only near the camera.
+  botShot(e, t, m, hit, dist, dmg) {
+    const cam = this.camera.position;
+    const tx = t.body.pos.x, ty = t.body.pos.y + rand(0.9, 1.6), tz = t.body.pos.z;
+    let ex = tx, ey = ty, ez = tz;
+    if (!hit) {
+      ex += rand(-1.6, 1.6);
+      ey += rand(-0.6, 1.0);
+      ez += rand(-1.6, 1.6);
+    }
+    const near = Math.hypot(m.x - cam.x, m.z - cam.z) < 130 || Math.hypot(tx - cam.x, tz - cam.z) < 130;
+    if (near) {
+      let dx = ex - m.x, dy = ey - m.y, dz = ez - m.z;
+      const L = Math.hypot(dx, dy, dz) || 1;
+      dx /= L; dy /= L; dz /= L;
+      if (!hit && this.world.col.raycast(m.x, m.y, m.z, dx, dy, dz, L + 20, this._hit2)) {
+        const H = this._hit2;
+        ex = m.x + dx * H.t; ey = m.y + dy * H.t; ez = m.z + dz * H.t;
+        if (Math.hypot(ex - cam.x, ez - cam.z) < 50) this.fx.impact(ex, ey, ez, H.nx, H.ny, H.nz, H.c.surf);
+      }
+      this.fx.muzzle(m.x, m.y, m.z, dx, dy, dz, e.kind === 'sniper');
+      const col = e.team === 0 ? [1.0, 2.2, 5] : e.kind === 'sniper' ? [5, 1.2, 1.0] : [4, 1.4, 0.6];
+      this.fx.tracers.spawn(m.x, m.y, m.z, ex, ey, ez, col, 340, 5, 0.03);
+      if (this.sfxBudget > 0) {
+        this.sfxBudget--;
+        const d = Math.hypot(m.x - cam.x, m.y - cam.y, m.z - cam.z);
+        this.audio.gun(e.K.sound, Math.max(d, 1), this.pan(m.x, m.z));
+      }
+    }
+    if (hit) {
+      const head = Math.random() < 0.12;
+      const L = Math.max(dist, 0.01);
+      const killed = t.takeDamage(dmg * (head ? 1.8 : 1), head, (tx - e.body.pos.x) / L, (tz - e.body.pos.z) / L, this, e);
+      if (near && Math.hypot(tx - cam.x, tz - cam.z) < 60) this.fx.blood(tx, ty, tz, (tx - m.x) / L, 0, (tz - m.z) / L, head);
+      if (killed) this.onBotKill(t, e);
     }
   }
 
@@ -379,7 +485,7 @@ class Game {
           const x = s.x + rand(-s.rx, s.rx) * 0.85, z = s.z + rand(-s.rz, s.rz) * 0.85;
           if (isClear(this.world.col, x, z, 0.4, s.y + 0.05, s.y + 1.8)) {
             const kind = Math.random() < 0.55 ? 'sniper' : 'gunner';
-            return !!this.enemies.spawn(kind, x, s.y, z, s, n, armored);
+            return !!this.enemies.spawn(kind, x, s.y, z, s, n, armored, 1, this.waveGang);
           }
         }
       }
@@ -388,13 +494,13 @@ class Game {
     if (!c) return false;
     if (Math.hypot(c.x - P.x, c.z - P.z) < 30) return false;
     const kind = Math.random() < Math.min(0.45, 0.15 + n * 0.05) ? 'rusher' : 'gunner';
-    return !!this.enemies.spawn(kind, c.x, c.y, c.z, null, n, armored);
+    return !!this.enemies.spawn(kind, c.x, c.y, c.z, null, n, armored, 1, this.waveGang);
   }
 
   // Moves a hidden enemy to a rooftop (or street cell) that has line of sight to the player.
   relocateEnemy(e) {
     // In 100 Bots mode the crowd itself provides pressure; only stragglers get repositioned.
-    if (this.mode === 'bots' && this.enemies.aliveCount > 12) return false;
+    if (this.mode === 'gang' && this.enemies.hostileCount > 12) return false;
     const P = this.player.body.pos, cam = this.camera.position;
     const spots = this.world.roofSpots;
     for (let tries = 0; tries < 14; tries++) {
@@ -441,27 +547,81 @@ class Game {
 
   onPlayerDeath() {
     this.deathT = 0;
+    this.stats.deaths++;
+    if (this.mode !== 'gang') this.lives--;
     this.audio.death();
     this.hud.showBanner('', '', 0.01);
   }
 
+  // Waves: a few lives per run. Gang War: respawn as long as your crew is still standing.
+  canRespawn() {
+    if (this.mode === 'gang') return !this.victory && this.enemies.countTeam(0) > 0;
+    return this.lives > 0;
+  }
+
+  respawnPlayer() {
+    const E = this.enemies, W = this.world, p = this.player;
+    const hostiles = E.list.filter((e) => e.alive && e.team !== 0);
+    const danger = (x, z) => {
+      let m = Infinity;
+      for (const e of hostiles) m = Math.min(m, Math.hypot(e.body.pos.x - x, e.body.pos.z - z));
+      return m;
+    };
+    let best = null, bestScore = -1;
+    const consider = (x, y, z) => {
+      if (!isClear(W.col, x, z, 0.4, y + 0.05, y + 1.8)) return;
+      const d = danger(x, z);
+      const score = Math.min(d, 70) + rand(0, 6);
+      if (score > bestScore) { bestScore = score; best = { x, y, z }; }
+    };
+    if (this.mode === 'gang') {
+      // Spawn next to a homie who isn't in the thick of it.
+      for (const a of E.list) {
+        if (!a.alive || a.team !== 0) continue;
+        for (let k = 0; k < 2; k++) {
+          const ang = rand(0, Math.PI * 2);
+          consider(a.body.pos.x + Math.cos(ang) * 1.6, a.body.pos.y, a.body.pos.z + Math.sin(ang) * 1.6);
+        }
+      }
+    }
+    if (!best) {
+      consider(W.spawn.x, W.spawn.y, W.spawn.z);
+      for (const s of W.pickupSpots) consider(s.x + rand(-1, 1), s.y, s.z + rand(-1, 1));
+    }
+    if (!best) best = { x: W.spawn.x, y: W.spawn.y, z: W.spawn.z };
+    let yaw = W.spawn.yaw, nd = Infinity;
+    for (const e of hostiles) {
+      const d = Math.hypot(e.body.pos.x - best.x, e.body.pos.z - best.z);
+      if (d < nd) { nd = d; yaw = Math.atan2(-(e.body.pos.x - best.x), -(e.body.pos.z - best.z)); }
+    }
+    p.reset(best.x, best.y, best.z, yaw);
+    p.spawnProtect = 2.0;
+    this.weapons.onRespawn();
+    this.deathT = 0;
+    this.timeScale = 1;
+    this.hud.respawn(-1, false);
+    this.hud.popup(this.mode === 'gang' ? 'BACK WITH THE CREW' : `${this.lives} ${this.lives === 1 ? 'LIFE' : 'LIVES'} LEFT`);
+    this.audio.pickup('armor');
+    this.nav.target = -1;
+  }
+
   showGameOver() {
     const s = this.stats;
-    const bots = this.mode === 'bots';
+    const bots = this.mode === 'gang';
     $('go-title').textContent = this.victory ? 'TURF SECURED' : 'FLATLINED';
     $('go-title').classList.toggle('win', this.victory);
-    $('go-wave-label').textContent = bots ? 'Bots left' : 'Wave';
-    $('go-wave').textContent = bots ? this.enemies.aliveCount : this.wave;
+    $('go-wave-label').textContent = bots ? 'Rivals left' : 'Wave';
+    $('go-wave').textContent = bots ? this.enemies.hostileCount : this.wave;
     $('go-kills').textContent = s.kills;
     $('go-head').textContent = s.heads;
     const w = this.weapons;
     $('go-acc').textContent = (w.shotsFired ? Math.round((w.shotsHit / w.shotsFired) * 100) : 0) + '%';
-    const key = bots ? 'stw.best100' : 'stw.best';
+    const key = bots ? 'stw.bestGang' : 'stw.best';
     const best = store.get(key, null);
     const isBest = !best || s.score > best.score;
     if (isBest) store.set(key, { wave: this.wave, score: s.score, kills: s.kills });
     const time = bots ? ` · ${Math.floor(this.runTime / 60)}:${String(Math.floor(this.runTime % 60)).padStart(2, '0')}` : '';
-    $('go-score').textContent = `${s.score.toLocaleString()} PTS${time}${isBest ? ' · NEW BEST' : ''}`;
+    $('go-score').textContent = `${s.score.toLocaleString()} PTS${time} · ${s.deaths} ${s.deaths === 1 ? 'DEATH' : 'DEATHS'}${isBest ? ' · NEW BEST' : ''}`;
   }
 
   // ---------- Combat callbacks ----------
@@ -533,7 +693,8 @@ class Game {
     let pts = KINDS[kind].score + (head ? 60 : 0) + (e.armored ? 50 : 0);
     if (multi >= 2) pts += 75 * (multi - 1);
     s.score += pts;
-    this.hud.killfeed(`${def.name} ▸ ${e.armored ? 'ARMORED ' : ''}${KIND_LABEL[kind]}  +${pts}`, head);
+    this.hud.killfeed(`${def.name} ▸ ${e.armored ? 'ARMORED ' : ''}${GANGS[e.gang].name} ${KIND_LABEL[kind]}  +${pts}`, head);
+    this.checkGangs();
     if (multi === 2) this.hud.popup('DOUBLE KILL');
     else if (multi === 3) this.hud.popup('TRIPLE KILL');
     else if (multi >= 4) this.hud.popup('RAMPAGE');
@@ -598,7 +759,7 @@ class Game {
     const f = cam.getWorldDirection(this._v);
     let best = null, bestAng = 1e9, bestDir = null;
     for (const e of this.enemies.list) {
-      if (!e.alive || !e.los) continue;
+      if (!e.alive || !e.los || e.team === 0) continue;
       const d = this._w.set(e.body.pos.x - cam.position.x, e.body.pos.y + 1.3 - cam.position.y, e.body.pos.z - cam.position.z);
       const dist = d.length();
       if (dist > 120) continue;
@@ -670,7 +831,7 @@ class Game {
     const p = this.player, w = this.weapons, inp = this.input, cam = this.camera;
     if (p.dead) {
       this.deathT += dt;
-      this.timeScale = lerp(0.35, 0.15, clamp(this.deathT / 1.5, 0, 1));
+      this.timeScale = this.deathT < 0.9 ? lerp(0.35, 0.2, this.deathT / 0.9) : 1;
       const sdt = dt * this.timeScale;
       p.applyCamera(cam, sdt);
       const k = clamp(this.deathT / 1.4, 0, 1);
@@ -680,7 +841,13 @@ class Game {
       cam.updateMatrixWorld();
       this.enemies.update(sdt, this);
       this.fx.update(sdt, this.world.col, this.audio, cam.position);
-      if (this.deathT > 2.0) this.setState('over');
+      if (this.mode === 'gang') this.updateGangWar(sdt);
+      if (this.canRespawn()) {
+        // Call of Duty style: short death cam, then straight back in (tap fire to skip the wait).
+        const left = RESPAWN_T - this.deathT;
+        this.hud.respawn(Math.max(0, left), this.deathT > 0.8);
+        if (left <= 0 || (this.deathT > 0.8 && inp.fire)) this.respawnPlayer();
+      } else if (this.deathT > 2.0) this.setState('over');
       this.updateHud(dt);
       return;
     }
@@ -699,7 +866,8 @@ class Game {
     }
     this.enemies.update(dt, this);
     this.pickups.update(dt, this);
-    if (this.mode === 'bots') this.updateBots(dt);
+    this.sfxBudget = 3;
+    if (this.mode === 'gang') this.updateGangWar(dt);
     else this.updateWaves(dt);
     this.fx.update(dt, this.world.col, this.audio, cam.position);
     this.audio.update(dt);
@@ -712,7 +880,8 @@ class Game {
     const p = this.player, w = this.weapons, H = this.hud, cam = this.camera;
     H.vitals(p.health, p.armor);
     H.weapon(w.cur, w.st.mag, w.st.reserve, w.reloadT > 0);
-    H.wave(this.mode === 'bots' ? '100 BOTS' : 'WAVE ' + this.wave, this.toSpawn + this.enemies.aliveCount);
+    if (this.mode === 'gang') H.gangs(GANGS, this.gangAlive);
+    else H.wave('WAVE ' + this.wave, this.toSpawn + this.enemies.aliveCount, this.lives);
     H.score(this.stats.score);
     const spread = w.spread(p);
     const gap = (Math.tan(spread) / Math.tan((cam.fov * DEG) / 2)) * (window.innerHeight / 2) + 5;

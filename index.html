@@ -73,7 +73,7 @@
     text-align: center; text-shadow: 0 2px 4px rgba(0,0,0,0.75);
   }
   #wave-num { font-family: var(--head-font); font-size: 18px; letter-spacing: 2px; }
-  #wave-left { font-size: 13px; color: var(--ink-dim); font-weight: 700; letter-spacing: 1px; }
+  #wave-left { font-size: 13px; white-space: nowrap; color: var(--ink-dim); font-weight: 700; letter-spacing: 1px; }
   #score { font-size: 15px; font-weight: 700; color: var(--accent); }
 
   #crosshair { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
@@ -104,7 +104,7 @@
     background: radial-gradient(ellipse at 50% 100%, rgba(255,40,40,0.95), rgba(255,40,40,0) 70%);
   }
 
-  #killfeed { position: absolute; right: calc(var(--sar) + 16px); top: calc(var(--sat) + 100px); display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  #killfeed { position: absolute; right: calc(var(--sar) + 16px); top: calc(var(--sat) + 162px); display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
   #killfeed div {
     font-size: 13px; font-weight: 700; padding: 2px 8px; background: var(--panel); border-radius: 3px;
     border-right: 3px solid var(--accent); animation: kfin 0.18s ease-out;
@@ -127,6 +127,10 @@
   #scope::after { top: 50%; left: 10%; right: 10%; height: 1.5px; margin-top: -0.75px; }
   #scope i { position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px; background: #ff2d2d; border-radius: 50%; box-shadow: 0 0 6px #ff2d2d; }
 
+  #respawn { position: absolute; left: 50%; top: 34%; transform: translateX(-50%); text-align: center; text-shadow: 0 2px 8px rgba(0,0,0,0.8); }
+  #respawn span { display: block; font-family: var(--head-font); font-size: 22px; letter-spacing: 4px; }
+  #respawn b { display: block; font-family: var(--head-font); font-size: 64px; line-height: 1; color: var(--accent); font-weight: 400; }
+  #respawn small { font-size: 13px; font-weight: 700; letter-spacing: 2px; color: var(--ink-dim); }
   #fps { position: absolute; left: calc(var(--sal) + 150px); top: calc(var(--sat) + 10px); font-size: 11px; color: var(--ink-dim); }
 
   /* ---------- TOUCH CONTROLS ---------- */
@@ -250,6 +254,7 @@
   <div id="banner"><div class="t"></div><div class="s"></div></div>
   <div id="popup"></div>
   <div id="scope" class="hidden"><i></i></div>
+  <div id="respawn" class="hidden"><span>RESPAWNING</span><b>3</b><small>TAP FIRE TO DROP IN NOW</small></div>
   <div id="fps"></div>
 </div>
 
@@ -268,10 +273,10 @@
 <div id="menu" class="screen hidden">
   <div class="menu-inner">
     <div class="logo"><div class="l1">SUNSET CITY</div><div class="l2">TURF WAR</div></div>
-    <div class="tagline">Rival crews are rolling into your blocks. Survive endless waves, or take on 100 bots at once. Take the rooftops, run the stairs, and hold the turf.</div>
+    <div class="tagline">Rival crews are rolling into your blocks. Survive endless waves, or run the blue crew in a 100-bot, four-gang war. Take the rooftops, run the stairs, and hold the turf.</div>
     <div class="modes">
       <button class="btn" id="btn-play">WAVES</button>
-      <button class="btn alt" id="btn-bots">100 BOTS</button>
+      <button class="btn alt" id="btn-bots">GANG WAR</button>
     </div>
     <div class="best" id="best"></div>
     <div class="hint" id="hint"></div>

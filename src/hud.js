@@ -1,5 +1,6 @@
 import { MAP } from './world.js';
 import { WEAPONS } from './weapons.js';
+import { GANGS } from './enemies.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -74,9 +75,31 @@ export class HUD {
     this.set('slot', idx, (v) => this.slotEls.forEach((s, i) => s.classList.toggle('on', i === v)));
   }
 
-  wave(n, left) {
+  wave(n, left, lives) {
     this.set('wave', n, (v) => { this.waveNum.textContent = v; });
-    this.set('left', left, (v) => { this.waveLeft.textContent = v + (v === 1 ? ' HOSTILE' : ' HOSTILES'); });
+    this.set('left', left + '|' + lives, () => {
+      this.waveLeft.textContent = left + (left === 1 ? ' HOSTILE' : ' HOSTILES') + (lives !== undefined ? ' · ' + '♥'.repeat(Math.max(0, lives)) : '');
+    });
+  }
+
+  // Respawn countdown overlay; t < 0 hides it.
+  respawn(t, canSkip) {
+    const el = this.respawnEl || (this.respawnEl = document.getElementById('respawn'));
+    if (t < 0) { this.set('rsp', 'off', () => el.classList.add('hidden')); return; }
+    this.set('rsp', Math.ceil(t) + (canSkip ? 's' : ''), () => {
+      el.classList.remove('hidden');
+      el.querySelector('b').textContent = Math.max(1, Math.ceil(t));
+      el.querySelector('small').style.visibility = canSkip ? 'visible' : 'hidden';
+    });
+  }
+
+  // Gang War: label plus one colored count per crew.
+  gangs(gangs, counts) {
+    this.set('wave', 'GANG WAR', (v) => { this.waveNum.textContent = v; });
+    this.set('left', counts.join(','), () => {
+      this.waveLeft.innerHTML = gangs.map((g, i) =>
+        `<span style="color:${g.css};opacity:${counts[i] ? 1 : 0.35}">${i === 0 ? 'YOU+' : ''}${g.name} ${counts[i]}</span>`).join(' · ');
+    });
   }
 
   score(s) { this.set('score', s, (v) => { this.scoreEl.textContent = v.toLocaleString(); }); }
@@ -111,10 +134,11 @@ export class HUD {
     this.dmgEls[i].style.opacity = '1';
   }
 
-  killfeed(text, head) {
+  killfeed(text, head, color) {
     const d = document.createElement('div');
     d.textContent = text;
     if (head) d.classList.add('head');
+    if (color) d.style.borderRightColor = color;
     this.feed.prepend(d);
     this.feedItems.push({ el: d, t: 3.5 });
     while (this.feed.children.length > 4) this.feed.lastChild.remove();
@@ -235,12 +259,12 @@ export class HUD {
       ctx.fillStyle = it.type === 'health' ? '#5fd068' : it.type === 'armor' ? '#4fa8ff' : '#ffb23e';
       ctx.fillRect((p.x + MAP.HALF) * S - px - 6, (p.z + MAP.HALF) * S - pz - 6, 12, 12);
     }
-    // Enemies with height cues.
+    // Bots in their crew colors, with height cues.
     for (const e of enemies.list) {
       if (!e.alive) continue;
       const ex = (e.body.pos.x + MAP.HALF) * S - px, ez = (e.body.pos.z + MAP.HALF) * S - pz;
       const dh = e.body.pos.y - player.body.pos.y;
-      ctx.fillStyle = e.los ? '#ff3b3b' : '#c43030';
+      ctx.fillStyle = GANGS[e.gang].css;
       ctx.beginPath();
       if (dh > 3) { ctx.moveTo(ex, ez - 11); ctx.lineTo(ex + 9, ez + 7); ctx.lineTo(ex - 9, ez + 7); }
       else if (dh < -3) { ctx.moveTo(ex, ez + 11); ctx.lineTo(ex + 9, ez - 7); ctx.lineTo(ex - 9, ez - 7); }

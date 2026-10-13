@@ -43,6 +43,7 @@ export class Player {
     this.coyote = 0;
     this.jumpBuffer = 0;
     this.lastSafe = new THREE.Vector3(x, y, z);
+    this.spawnProtect = 0;
   }
 
   addRecoil(v, h, perm, rec) {
@@ -54,7 +55,7 @@ export class Player {
   }
 
   damage(amount, fromX, fromZ) {
-    if (this.dead) return;
+    if (this.dead || this.spawnProtect > 0) return;
     const absorbed = Math.min(this.armor, amount * 0.66);
     this.armor -= absorbed;
     this.health -= amount - absorbed;
@@ -181,6 +182,7 @@ export class Player {
     }
 
     this.sinceHurt += dt;
+    this.spawnProtect = Math.max(0, this.spawnProtect - dt);
     this.hurtT = Math.max(0, this.hurtT - dt * 0.9);
     if (this.sinceHurt > 5 && this.health < 100 && !this.dead) this.health = Math.min(100, this.health + dt * 7);
     this.shake = Math.max(0, this.shake - dt * 2.2);

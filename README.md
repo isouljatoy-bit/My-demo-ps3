@@ -27,8 +27,12 @@ Then open `http://<your-computer-ip>:8080` on your phone and rotate to landscape
 
 There are two modes:
 
-- **Waves:** endless waves of rival crews that get tougher each round.
-- **100 Bots:** 100 bots spread across the streets and rooftops at once. Clear them all to win. Only a few bots fire at you at any moment while the rest move into position, so the fight stays playable.
+- **Waves:** endless waves of rival crews that get tougher each round. Each wave is a different gang. You have three lives.
+- **Gang War:** 100 bots in four colour-coded crews of 25 (Blue, Green, Purple, Red), each starting in its own quarter of the city. You run Blue with 24 homies, marked by floating blue diamonds. The other three crews fight you and each other. Wipe them all out to win. You respawn beside a homie as long as your crew has anyone left standing.
+
+When you die, you drop back in after 2.5 seconds, or sooner if you tap fire. You get two seconds of spawn protection and fresh magazines.
+
+Only a few rival bots can fire at you at any moment while the rest move into position, so big fights stay playable.
 
 Three enemy types appear in both modes:
 
@@ -53,7 +57,7 @@ The city and your kit:
 - **Rendering:** three.js r160 is loaded from a CDN. Static geometry is merged per material and spatial chunk. Palm trees are instanced. The camera-following sun shadow map is snapped to texels to stop shimmer.
 - **Post-processing:** a custom HDR pipeline (MSAA on High quality) with a quarter- and eighth-resolution bloom chain, ACES tone mapping, a warm colour grade, vignette, and chromatic aberration and a red tint when you take damage.
 - **Effects:** pooled GPU particles, instanced tracers, bullet-hole decals and physically bouncing brass casings. Nothing is allocated per frame in the hot paths.
-- **Bots:** all bots are drawn with shared instanced meshes, so drawing 100 costs about the same as drawing a few. Distant bots update their AI less often to save CPU.
+- **Bots:** each crew has its own navigation map toward its nearest enemies. All bots are drawn with shared instanced meshes, so drawing 100 costs about the same as drawing a few. Distant bots update their AI less often to save CPU.
 - **Collision and AI:** collision uses axis-aligned boxes in a grid with step-up for stairs and fast ray casting. Street-level enemies navigate with a breadth-first-search flow field.
 - **Audio:** all sound is synthesised with the Web Audio API: per-weapon gunshots, distance-filtered enemy fire, near-miss whizzes, ricochets, reload sounds and city ambience.
 - **Adaptive quality:** the game measures frame time and adjusts render resolution, then the quality tier, to hold 60 fps and avoid thermal throttling. You can pick Low, Medium or High manually in the pause menu.
