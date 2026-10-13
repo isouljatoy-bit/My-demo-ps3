@@ -182,6 +182,9 @@
     background: linear-gradient(180deg, #ffd06b, #ff9d2e); box-shadow: 0 4px 0 #9a4f0b, 0 8px 20px rgba(0,0,0,0.4);
     cursor: pointer; margin: 0 8px 8px 0; touch-action: manipulation;
   }
+  .modes { display: flex; flex-wrap: wrap; }
+  .btn.alt { background: linear-gradient(180deg, #ff7a9a, #e8326a); color: #fff; box-shadow: 0 4px 0 #7a1033, 0 8px 20px rgba(0,0,0,0.4); }
+  .wasted.win { color: var(--accent); text-shadow: 0 4px 0 #3a1c00, 0 0 30px rgba(255,170,40,0.4); }
   .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #9a4f0b; }
   .btn.ghost { background: rgba(255,255,255,0.1); color: var(--ink); box-shadow: inset 0 0 0 2px rgba(255,255,255,0.3); }
   .hint { font-size: 12.5px; color: var(--ink-dim); margin-top: 10px; line-height: 1.5; font-weight: 600; }
@@ -265,8 +268,11 @@
 <div id="menu" class="screen hidden">
   <div class="menu-inner">
     <div class="logo"><div class="l1">SUNSET CITY</div><div class="l2">TURF WAR</div></div>
-    <div class="tagline">Rival crews are rolling into your blocks. Take the rooftops, run the stairs, and hold the turf for as long as you can.</div>
-    <button class="btn" id="btn-play">PLAY</button>
+    <div class="tagline">Rival crews are rolling into your blocks. Survive endless waves, or take on 100 bots at once. Take the rooftops, run the stairs, and hold the turf.</div>
+    <div class="modes">
+      <button class="btn" id="btn-play">WAVES</button>
+      <button class="btn alt" id="btn-bots">100 BOTS</button>
+    </div>
     <div class="best" id="best"></div>
     <div class="hint" id="hint"></div>
   </div>
@@ -295,9 +301,9 @@
 
 <div id="gameover" class="screen hidden">
   <div class="card center">
-    <div class="wasted">FLATLINED</div>
+    <div class="wasted" id="go-title">FLATLINED</div>
     <div class="stats">
-      <div><b id="go-wave">0</b><span>Wave</span></div>
+      <div><b id="go-wave">0</b><span id="go-wave-label">Wave</span></div>
       <div><b id="go-kills">0</b><span>Kills</span></div>
       <div><b id="go-head">0</b><span>Headshots</span></div>
       <div><b id="go-acc">0%</b><span>Accuracy</span></div>

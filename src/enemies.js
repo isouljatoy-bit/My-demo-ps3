@@ -96,20 +96,20 @@ class Enemy {
     this.root = new THREE.Group();
     this.pose = new THREE.Group();
     this.root.add(this.pose);
-    this.mat = new THREE.MeshLambertMaterial({ vertexColors: true });
-    this.upper = new THREE.Mesh(pool.geos.gunner[0][0], this.mat);
+    // Transform-only hierarchy: the pool draws every bot through shared InstancedMeshes.
+    this.upper = new THREE.Object3D();
     this.upper.position.y = 0.95;
-    this.legL = new THREE.Mesh(pool.legs.gunner, this.mat);
-    this.legR = new THREE.Mesh(pool.legs.gunner, this.mat);
+    this.legL = new THREE.Object3D();
+    this.legR = new THREE.Object3D();
     this.legL.position.set(-0.12, 0.95, 0);
     this.legR.position.set(0.12, 0.95, 0);
-    for (const m of [this.upper, this.legL, this.legR]) {
-      m.castShadow = true;
-      m.receiveShadow = false;
-      this.pose.add(m);
-    }
-    this.root.visible = false;
-    scene.add(this.root);
+    this.pose.add(this.upper, this.legL, this.legR);
+    this.variant = 0;
+    this.armorIdx = 0;
+    this.hasToken = false;
+    this.tokenT = 0;
+    this.tokenCd = 0;
+    this.lodAcc = 0;
     this.active = false;
     this.alive = false;
     this.muzzleLocal = new THREE.Vector3();
@@ -122,9 +122,11 @@ class Enemy {
     this.kind = kind;
     this.K = K;
     this.roof = roof;
-    const variant = randInt(0, this.pool.geos[kind].length - 1);
-    this.upper.geometry = this.pool.geos[kind][variant][armored ? 1 : 0];
-    this.legL.geometry = this.legR.geometry = this.pool.legs[kind];
+    this.variant = randInt(0, this.pool.geos[kind].length - 1);
+    this.armorIdx = armored ? 1 : 0;
+    this.hasToken = false;
+    this.tokenCd = rand(0, 2);
+    this.lodAcc = 0;
     this.maxHp = this.hp = K.hp + (armored ? 60 : 0) + wave * 4;
     this.armored = armored;
     this.body.pos.set(x, y, z);
@@ -160,13 +162,13 @@ class Enemy {
     this.dmgScale = Math.min(1.8, 1 + wave * 0.05);
     this.yaw = this.root.rotation.y;
     this.fallDir = 0;
-    this.mat.emissive.setRGB(0, 0, 0);
     this.muzzleLocal.set(0.06, 0.4 + 0.95, 0.3 + K.gun + 0.18);
     this.sinceSeen = 99;
     this.backT = 0;
   }
 
   despawn() {
+    if (this.hasToken) this.pool.releaseToken(this);
     this.active = false;
     this.alive = false;
     this.root.visible = false;
@@ -180,6 +182,7 @@ class Enemy {
     this.aimT = Math.max(0, this.aimT - 0.25);
     this.sinceSeen = 0;
     if (this.hp <= 0) {
+      if (this.hasToken) this.pool.releaseToken(this);
       this.alive = false;
       this.deadT = 0;
       this.fallDir = Math.atan2(-dx, -dz);
@@ -198,7 +201,6 @@ class Enemy {
   update(dt, g) {
     const b = this.body;
     this.flash = Math.max(0, this.flash - dt * 6);
-    this.mat.emissive.setRGB(this.flash * 0.9, this.flash * 0.25, this.flash * 0.2);
     this.flinch = Math.max(0, this.flinch - dt * 4);
 
     if (!this.alive) {
@@ -349,7 +351,14 @@ class Enemy {
       this.aimT = Math.max(0, this.aimT - dt * 0.5);
     }
     this.shotCd -= dt;
-    if (this.shotCd <= 0 && this.los && dist < K.range && this.aimT > K.react && !g.player.dead) {
+    // Attack tokens: only a few bots may shoot at the player at once; the rest maneuver.
+    const wantsFire = this.los && dist < K.range && this.aimT > K.react && !g.player.dead;
+    this.tokenCd -= dt;
+    if (this.hasToken) {
+      this.tokenT -= dt;
+      if (!wantsFire || this.tokenT <= 0) this.pool.releaseToken(this);
+    } else if (wantsFire && this.tokenCd <= 0) this.pool.requestToken(this);
+    if (this.shotCd <= 0 && wantsFire && this.hasToken) {
       if (this.burstLeft <= 0) this.burstLeft = randInt(K.burst[0], K.burst[1]);
       this.fire(g, dist);
       this.burstLeft--;
@@ -390,6 +399,34 @@ export class Enemies {
     }
     this.list = [];
     for (let i = 0; i < max; i++) this.list.push(new Enemy(scene, this));
+    this.maxTokens = 99;
+    this.tokens = 0;
+    this.frame = 0;
+    // One InstancedMesh per body-part geometry: draw calls stay flat no matter how many bots.
+    this.mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+    this.ims = [];
+    const white = new THREE.Color(1, 1, 1);
+    const mk = (geo, cap) => {
+      const im = new THREE.InstancedMesh(geo, this.mat, cap);
+      im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      for (let i = 0; i < cap; i++) im.setColorAt(i, white);
+      im.instanceColor.setUsage(THREE.DynamicDrawUsage);
+      im.count = 0;
+      im.castShadow = true;
+      im.receiveShadow = false;
+      im.frustumCulled = false;
+      im.userData.n = 0;
+      scene.add(im);
+      this.ims.push(im);
+      return im;
+    };
+    this.upperIM = {};
+    this.legIM = {};
+    for (const kind of Object.keys(KINDS)) {
+      this.upperIM[kind] = this.geos[kind].map((pair) => pair.map((geo) => mk(geo, max)));
+      this.legIM[kind] = mk(this.legs[kind], max * 2);
+    }
+    this._c = new THREE.Color();
     this.hitInfo = { e: null, t: 0, head: false, x: 0, y: 0, z: 0 };
     this._box = { x0: 0, y0: 0, z0: 0, x1: 0, y1: 0, z1: 0 };
   }
@@ -413,12 +450,68 @@ export class Enemies {
     return e;
   }
 
+  requestToken(e) {
+    if (this.tokens >= this.maxTokens) return false;
+    this.tokens++;
+    e.hasToken = true;
+    e.tokenT = rand(3, 6);
+    return true;
+  }
+
+  releaseToken(e) {
+    if (!e.hasToken) return;
+    e.hasToken = false;
+    this.tokens = Math.max(0, this.tokens - 1);
+    e.tokenCd = rand(1.5, 3.5);
+  }
+
   update(dt, g) {
-    for (const e of this.list) if (e.active) e.update(dt, g);
+    this.frame++;
+    const P = g.player.body.pos;
+    for (let i = 0; i < this.list.length; i++) {
+      const e = this.list[i];
+      if (!e.active) continue;
+      // Distant live bots think at a third of the rate to save CPU on large battles.
+      const far = e.alive && Math.abs(e.body.pos.x - P.x) + Math.abs(e.body.pos.z - P.z) > 110;
+      if (far) {
+        e.lodAcc += dt;
+        if ((this.frame + i) % 3 !== 0) continue;
+        e.update(Math.min(e.lodAcc, 0.15), g);
+        e.lodAcc = 0;
+      } else e.update(dt, g);
+    }
+  }
+
+  render() {
+    for (const im of this.ims) im.userData.n = 0;
+    const c = this._c;
+    const put = (im, m) => {
+      const n = im.userData.n++;
+      im.setMatrixAt(n, m);
+      im.setColorAt(n, c);
+    };
+    for (const e of this.list) {
+      if (!e.active) continue;
+      e.root.updateMatrixWorld(true);
+      const f = e.flash;
+      c.setRGB(1 + f * 2.5, 1 - f * 0.4, 1 - f * 0.45);
+      put(this.upperIM[e.kind][e.variant][e.armorIdx], e.upper.matrixWorld);
+      const legs = this.legIM[e.kind];
+      put(legs, e.legL.matrixWorld);
+      put(legs, e.legR.matrixWorld);
+    }
+    for (const im of this.ims) {
+      im.count = im.userData.n;
+      if (im.count > 0) {
+        im.instanceMatrix.needsUpdate = true;
+        im.instanceColor.needsUpdate = true;
+      }
+    }
   }
 
   clear() {
     for (const e of this.list) e.despawn();
+    this.tokens = 0;
   }
 
   // Ray vs every live enemy (head sphere + body box). Returns hitInfo or null.

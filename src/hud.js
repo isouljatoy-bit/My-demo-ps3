@@ -75,7 +75,7 @@ export class HUD {
   }
 
   wave(n, left) {
-    this.set('wave', n, (v) => { this.waveNum.textContent = 'WAVE ' + v; });
+    this.set('wave', n, (v) => { this.waveNum.textContent = v; });
     this.set('left', left, (v) => { this.waveLeft.textContent = v + (v === 1 ? ' HOSTILE' : ' HOSTILES'); });
   }
 

@@ -49,7 +49,7 @@ export class Pickups {
     const ringGeo = new THREE.RingGeometry(0.45, 0.62, 32).rotateX(-Math.PI / 2);
     const beamGeo = new THREE.CylinderGeometry(0.28, 0.5, 4, 16, 1, true).translate(0, 2, 0);
     for (const type of Object.keys(TYPES)) {
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 14; i++) {
         const c = TYPES[type].color;
         const root = new THREE.Group();
         const ic = icon(type);

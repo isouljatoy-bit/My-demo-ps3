@@ -20,6 +20,7 @@ const QUALITY = {
   med: { scale: 0.82, shadow: 1536, shadowEvery: 1, bloom: true, msaa: 0, enemies: 10, fx: 'med' },
   high: { scale: 1.0, shadow: 2048, shadowEvery: 1, bloom: true, msaa: 4, enemies: 12, fx: 'high' },
 };
+const BOT_COUNT = 100;
 const KIND_LABEL = { gunner: 'GUNNER', rusher: 'RUSHER', sniper: 'ROOF SNIPER' };
 const $ = (id) => document.getElementById(id);
 
@@ -112,7 +113,8 @@ class Game {
     this.fx = new FX(this.scene, this.tex, this.envMap);
     this.weapons = new Weapons(this, this.envMap, this.tex);
     this.player = new Player(this);
-    this.enemies = new Enemies(this.scene, 12);
+    this.enemies = new Enemies(this.scene, BOT_COUNT + 4);
+    this.enemyDmgMul = 1;
     this.pickups = new Pickups(this.scene, this.tex);
     this.post = new Post(this.renderer);
 
@@ -154,11 +156,12 @@ class Game {
   // ---------- UI ----------
   bindUI() {
     const tap = (id, fn) => $(id).addEventListener('click', (e) => { e.preventDefault(); this.audio.init(); this.audio.ui(); fn(); });
-    tap('btn-play', () => this.startRun());
+    tap('btn-play', () => this.startRun('waves'));
+    tap('btn-bots', () => this.startRun('bots'));
     tap('btn-resume', () => this.setState('play'));
-    tap('btn-restart', () => this.startRun());
+    tap('btn-restart', () => this.startRun(this.mode));
     tap('btn-quit', () => this.setState('menu'));
-    tap('btn-again', () => this.startRun());
+    tap('btn-again', () => this.startRun(this.mode));
     tap('btn-menu', () => this.setState('menu'));
 
     const sens = $('sens');
@@ -200,8 +203,11 @@ class Game {
   }
 
   updateBest() {
-    const best = store.get('stw.best', null);
-    $('best').textContent = best ? `BEST: WAVE ${best.wave} · ${best.score.toLocaleString()} PTS` : '';
+    const best = store.get('stw.best', null), b100 = store.get('stw.best100', null);
+    const parts = [];
+    if (best) parts.push(`WAVES BEST: WAVE ${best.wave} · ${best.score.toLocaleString()} PTS`);
+    if (b100) parts.push(`100 BOTS BEST: ${b100.kills ?? 0} KILLS · ${b100.score.toLocaleString()} PTS`);
+    $('best').innerHTML = parts.join('<br>');
   }
 
   setState(s) {
@@ -233,8 +239,12 @@ class Game {
   }
 
   // ---------- Run lifecycle ----------
-  startRun() {
+  startRun(mode = 'waves') {
     this.audio.init();
+    this.mode = mode;
+    this.victory = false;
+    this.victoryT = 0;
+    this.runTime = 0;
     const W = this.world;
     this.player.reset(W.spawn.x, W.spawn.y, W.spawn.z, W.spawn.yaw);
     this.weapons.reset();
@@ -259,7 +269,12 @@ class Game {
     this.nav.target = -1;
     this.nav.update(this.player.body.pos.x, this.player.body.pos.z);
     this.navT = 0;
-    this.startWave(1);
+    if (mode === 'bots') this.startBots();
+    else {
+      this.enemies.maxTokens = 99;
+      this.enemyDmgMul = 1;
+      this.startWave(1);
+    }
     this.setState('play');
     if (!this.input.isTouch) this.renderer.domElement.requestPointerLock?.();
   }
@@ -272,6 +287,58 @@ class Game {
     this.intermission = 0;
     this.hud.showBanner(`WAVE ${n}`, n === 1 ? 'Rival crews incoming — hold the turf' : n % 3 === 0 ? 'Snipers on the rooftops' : 'They brought backup', 3);
     this.audio.waveStart();
+  }
+
+  // ---------- 100 Bots mode ----------
+  startBots() {
+    const P = this.player.body.pos, W = this.world;
+    this.wave = 1;
+    this.toSpawn = 0;
+    this.enemies.maxTokens = 4;
+    this.enemyDmgMul = 0.6;
+    let placed = 0;
+    // Rooftops first (up to two shooters per roof), then the streets.
+    const spots = W.roofSpots.slice().sort(() => Math.random() - 0.5);
+    for (const s of spots) {
+      if (Math.hypot(s.x - P.x, s.z - P.z) < 28) continue;
+      for (let k = 0; k < 2 && placed < 28; k++) {
+        for (let tries = 0; tries < 6; tries++) {
+          const x = s.x + rand(-s.rx, s.rx) * 0.85, z = s.z + rand(-s.rz, s.rz) * 0.85;
+          if (!isClear(W.col, x, z, 0.45, s.y + 0.05, s.y + 1.8)) continue;
+          if (this.enemies.list.some((e) => e.alive && Math.hypot(e.body.pos.x - x, e.body.pos.z - z) < 1.2)) continue;
+          const kind = Math.random() < 0.25 ? 'sniper' : 'gunner';
+          if (this.enemies.spawn(kind, x, s.y, z, s, this.wave, Math.random() < 0.12)) placed++;
+          break;
+        }
+      }
+    }
+    for (let tries = 0; tries < 2000 && placed < BOT_COUNT; tries++) {
+      const c = this.nav.randomCell(16, 140, this._cell);
+      if (!c) break;
+      if (Math.hypot(c.x - P.x, c.z - P.z) < 36) continue;
+      if (this.enemies.list.some((e) => e.alive && Math.abs(e.body.pos.x - c.x) + Math.abs(e.body.pos.z - c.z) < 1.5)) continue;
+      const kind = Math.random() < 0.3 ? 'rusher' : 'gunner';
+      if (this.enemies.spawn(kind, c.x, c.y, c.z, null, this.wave, Math.random() < 0.15)) placed++;
+    }
+    this.botTotal = placed;
+    this.hud.showBanner(`${placed} BOTS`, 'Every crew in the city wants your turf', 3.2);
+    this.audio.waveStart();
+  }
+
+  updateBots(dt) {
+    this.runTime += dt;
+    if (this.victory) {
+      this.victoryT += dt;
+      if (this.victoryT > 3) this.setState('over');
+      return;
+    }
+    if (this.enemies.aliveCount === 0) {
+      this.victory = true;
+      const bonus = 5000 + Math.max(0, Math.round(600 - this.runTime)) * 10;
+      this.stats.score += bonus;
+      this.hud.showBanner('TURF SECURED', `All ${this.botTotal} bots down · +${bonus}`, 3.5);
+      this.audio.waveClear();
+    }
   }
 
   updateWaves(dt) {
@@ -326,6 +393,8 @@ class Game {
 
   // Moves a hidden enemy to a rooftop (or street cell) that has line of sight to the player.
   relocateEnemy(e) {
+    // In 100 Bots mode the crowd itself provides pressure; only stragglers get repositioned.
+    if (this.mode === 'bots' && this.enemies.aliveCount > 12) return false;
     const P = this.player.body.pos, cam = this.camera.position;
     const spots = this.world.roofSpots;
     for (let tries = 0; tries < 14; tries++) {
@@ -378,15 +447,21 @@ class Game {
 
   showGameOver() {
     const s = this.stats;
-    $('go-wave').textContent = this.wave;
+    const bots = this.mode === 'bots';
+    $('go-title').textContent = this.victory ? 'TURF SECURED' : 'FLATLINED';
+    $('go-title').classList.toggle('win', this.victory);
+    $('go-wave-label').textContent = bots ? 'Bots left' : 'Wave';
+    $('go-wave').textContent = bots ? this.enemies.aliveCount : this.wave;
     $('go-kills').textContent = s.kills;
     $('go-head').textContent = s.heads;
     const w = this.weapons;
     $('go-acc').textContent = (w.shotsFired ? Math.round((w.shotsHit / w.shotsFired) * 100) : 0) + '%';
-    const best = store.get('stw.best', null);
+    const key = bots ? 'stw.best100' : 'stw.best';
+    const best = store.get(key, null);
     const isBest = !best || s.score > best.score;
-    if (isBest) store.set('stw.best', { wave: this.wave, score: s.score });
-    $('go-score').textContent = `${s.score.toLocaleString()} PTS${isBest ? ' · NEW BEST' : ''}`;
+    if (isBest) store.set(key, { wave: this.wave, score: s.score, kills: s.kills });
+    const time = bots ? ` · ${Math.floor(this.runTime / 60)}:${String(Math.floor(this.runTime % 60)).padStart(2, '0')}` : '';
+    $('go-score').textContent = `${s.score.toLocaleString()} PTS${time}${isBest ? ' · NEW BEST' : ''}`;
   }
 
   // ---------- Combat callbacks ----------
@@ -477,7 +552,7 @@ class Game {
       ex = cam.position.x + rand(-0.2, 0.2);
       ey = cam.position.y - rand(0.1, 0.5);
       ez = cam.position.z + rand(-0.2, 0.2);
-      P.damage(dmg, e.body.pos.x, e.body.pos.z);
+      P.damage(dmg * this.enemyDmgMul, e.body.pos.x, e.body.pos.z);
     } else {
       const a = rand(0, Math.PI * 2), r = rand(0.6, 1.9);
       ex = cam.position.x + Math.cos(a) * r;
@@ -624,7 +699,8 @@ class Game {
     }
     this.enemies.update(dt, this);
     this.pickups.update(dt, this);
-    this.updateWaves(dt);
+    if (this.mode === 'bots') this.updateBots(dt);
+    else this.updateWaves(dt);
     this.fx.update(dt, this.world.col, this.audio, cam.position);
     this.audio.update(dt);
     this.mLight.intensity = Math.max(0, this.mLight.intensity - dt * 600);
@@ -636,7 +712,7 @@ class Game {
     const p = this.player, w = this.weapons, H = this.hud, cam = this.camera;
     H.vitals(p.health, p.armor);
     H.weapon(w.cur, w.st.mag, w.st.reserve, w.reloadT > 0);
-    H.wave(this.wave, this.toSpawn + this.enemies.aliveCount);
+    H.wave(this.mode === 'bots' ? '100 BOTS' : 'WAVE ' + this.wave, this.toSpawn + this.enemies.aliveCount);
     H.score(this.stats.score);
     const spread = w.spread(p);
     const gap = (Math.tan(spread) / Math.tan((cam.fov * DEG) / 2)) * (window.innerHeight / 2) + 5;
@@ -669,6 +745,7 @@ class Game {
     const p = this.player;
     const playing = this.state === 'play' || this.state === 'pause';
     const showVm = playing && !this.weapons.scoped && !p.dead;
+    this.enemies.render();
     this.post.render(this.scene, cam, this.weapons.scene, this.weapons.cam, showVm, {
       damage: playing ? clamp(p.hurtT, 0, 1) : 0,
       lowHealth: playing ? clamp((40 - p.health) / 40, 0, 1) : 0,

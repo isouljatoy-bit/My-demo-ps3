@@ -25,10 +25,19 @@ Then open `http://<your-computer-ip>:8080` on your phone and rotate to landscape
 
 ## Gameplay
 
-- Survive endless waves of rival crews. There are three enemy types:
-  - **Gunners** who hold their range
-  - **Rushers** who close the distance
-  - **Rooftop snipers**, who show a lens glint before they fire
+There are two modes:
+
+- **Waves:** endless waves of rival crews that get tougher each round.
+- **100 Bots:** 100 bots spread across the streets and rooftops at once. Clear them all to win. Only a few bots fire at you at any moment while the rest move into position, so the fight stays playable.
+
+Three enemy types appear in both modes:
+
+- **Gunners** who hold their range
+- **Rushers** who close the distance
+- **Rooftop snipers**, who show a lens glint before they fire
+
+The city and your kit:
+
 - Many buildings have wide exterior switchback staircases or metal fire escapes up to their roofs. Wooden planks bridge some neighbouring roofs. The garage has ramps up to its roof, and the central plaza is a three-tier monument with grand stairs on every side.
 - You can jump or mantle onto cars, crates, parapets and ledges, and drop off anything without taking fall damage.
 - There are five weapons, each with its own recoil (part of the kick stays and you have to pull it down), spread bloom and damage falloff:
@@ -44,6 +53,7 @@ Then open `http://<your-computer-ip>:8080` on your phone and rotate to landscape
 - **Rendering:** three.js r160 is loaded from a CDN. Static geometry is merged per material and spatial chunk. Palm trees are instanced. The camera-following sun shadow map is snapped to texels to stop shimmer.
 - **Post-processing:** a custom HDR pipeline (MSAA on High quality) with a quarter- and eighth-resolution bloom chain, ACES tone mapping, a warm colour grade, vignette, and chromatic aberration and a red tint when you take damage.
 - **Effects:** pooled GPU particles, instanced tracers, bullet-hole decals and physically bouncing brass casings. Nothing is allocated per frame in the hot paths.
+- **Bots:** all bots are drawn with shared instanced meshes, so drawing 100 costs about the same as drawing a few. Distant bots update their AI less often to save CPU.
 - **Collision and AI:** collision uses axis-aligned boxes in a grid with step-up for stairs and fast ray casting. Street-level enemies navigate with a breadth-first-search flow field.
 - **Audio:** all sound is synthesised with the Web Audio API: per-weapon gunshots, distance-filtered enemy fire, near-miss whizzes, ricochets, reload sounds and city ambience.
 - **Adaptive quality:** the game measures frame time and adjusts render resolution, then the quality tier, to hold 60 fps and avoid thermal throttling. You can pick Low, Medium or High manually in the pause menu.
